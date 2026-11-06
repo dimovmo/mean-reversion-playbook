@@ -1,5 +1,7 @@
 {
-  "name": "mean-reversion",
+  "name": "mean-reversion-playbook",
+  "description": "Mean Reversion Playbook",
+  "main": "index.astro",
   "type": "module",
   "version": "0.1.0",
   "private": true,
