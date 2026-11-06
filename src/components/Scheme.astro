@@ -1,0 +1,9 @@
+---
+const steps = Astro.props.steps ?? [
+  ['Overextension', 'Premium/Discount'],
+  ['Entry', 'X-1 IDM / Volume'],
+  ['SL', 'Strong High/Low'],
+  ['TP', 'X/X-1 FTA'],
+];
+---
+<div class="flow">{steps.map(([a, b]: string[], i: number) => <div><span>{i + 1}</span>{a}<br />{b}</div>)}</div>

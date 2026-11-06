@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mean Reversion — плейбук</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#191817;--panel:#242321;--line:#2f2d2a;--tx:#ece9e4;--tx2:#9b968e;--ac:#d97757;--up:#6fa383;--dn:#c8695f;--hl:rgba(217,119,87,.1);color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root[data-theme="light"]{--bg:#faf9f7;--panel:#f1efeb;--line:#e1ddd6;--tx:#2a2825;--tx2:#7a756d;--ac:#c4562f;--up:#3f7a58;--dn:#b04a40;--hl:rgba(196,86,47,.08);color-scheme:light}
+html{scroll-padding-top:70px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:17px/1.7 Inter,system-ui,sans-serif}
+h1,h2,h3{font-family:Newsreader,Georgia,serif;font-weight:500;line-height:1.2;margin:0}
+h2{font-size:30px;margin:0 0 14px}h3{font-size:20px}
+a{color:var(--ac)}
+.mono,code{font-family:"JetBrains Mono",monospace;font-size:.85em}
+header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:20px;padding:12px 24px;flex-wrap:wrap}
+.logo{font-family:Newsreader,serif;font-size:20px;margin-right:auto}
+nav a{color:var(--tx2);text-decoration:none;padding:6px 12px;border-radius:6px;font-size:15px}
+nav a.on{color:var(--ac);background:var(--hl)}
+button{font:inherit;color:var(--tx);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:14px}
+button:hover{border-color:var(--ac)}
+.view{display:none}.view.on{display:block}
+.pb{display:grid;grid-template-columns:230px minmax(0,720px);gap:48px;max-width:1040px;margin:0 auto;padding:32px 24px 80px}
+.side{position:sticky;top:76px;align-self:start;font-size:14px}
+.side small{color:var(--tx2);text-transform:uppercase;letter-spacing:.08em;font-size:11px}
+.side a{display:block;color:var(--tx2);text-decoration:none;padding:4px 10px;border-left:2px solid var(--line)}
+.side a.on{color:var(--ac);border-color:var(--ac)}
+section{padding:8px 0 40px;border-bottom:1px solid var(--line);margin-bottom:32px}
+.call{display:flex;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:18px 0}
+.call.ac{background:var(--hl)}.call.dn{border-left:3px solid var(--dn)}.call.up{border-left:3px solid var(--up)}
+.call b{display:block}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card .g{font-family:Newsreader,serif;font-size:28px;color:var(--ac)}
+.card ul{padding-left:18px;margin:8px 0 0;font-size:15px;color:var(--tx2)}
+.flow{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;margin:18px 0}
+.flow div{flex:1 1 120px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px}
+.flow div:not(:last-child){position:relative}
+.flow div:not(:last-child)::after{content:"→";position:absolute;right:-14px;top:50%;transform:translateY(-50%);color:var(--ac);background:var(--bg);z-index:1}
+.flow span{display:block;color:var(--tx2);font-size:12px}
+.chk label{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.chk input{accent-color:var(--ac);width:18px;height:18px;margin-top:4px}
+.chk input:checked+span{text-decoration:line-through;color:var(--tx2)}
+.tip{border-bottom:1px dashed var(--ac);cursor:help;position:relative}
+.tip:hover::after,.tip:focus::after{content:attr(data-d);position:absolute;left:0;bottom:130%;width:260px;background:var(--panel);border:1px solid var(--line);padding:8px 10px;border-radius:8px;font:13px/1.5 Inter,sans-serif;color:var(--tx);z-index:5;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.mini{display:flex;gap:14px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;margin:18px 0;cursor:pointer}
+.mini:hover{border-color:var(--ac)}
+.mini svg{width:150px;flex:none;border-radius:6px}
+.mini div{font-size:14px;color:var(--tx2)}
+.wrap{max-width:1040px;margin:0 auto;padding:32px 24px 80px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px;align-items:center}
+.chips small{color:var(--tx2);width:80px;font-size:12px}
+.chip{border-radius:999px;padding:4px 12px;font-size:13px}
+.chip.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.gal{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px}
+.ex{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;transition:.15s}
+.ex:hover{border-color:var(--ac);transform:translateY(-2px)}
+.ex svg{display:block;width:100%;aspect-ratio:16/10;background:var(--bg)}
+.ex .b{padding:12px 14px;font-size:14px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.tag{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--tx2);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+.tag.L{color:var(--up)}.tag.S{color:var(--dn)}.tag.gr{color:var(--ac)}
+.big{border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:zoom-in;margin:16px 0}
+.big svg{display:block;width:100%;aspect-ratio:16/8;background:var(--bg)}
+.tabs{display:flex;gap:8px;margin:12px 0}
+.tabs .on{background:var(--ac);border-color:var(--ac);color:#fff}
+.pn{display:flex;justify-content:space-between;margin-top:28px}
+.dl{display:grid;grid-template-columns:150px 1fr;gap:6px 16px;font-size:15px}.dl dt{color:var(--tx2)}.dl dd{margin:0}
+#lb{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:50;padding:24px}
+#lb.on{display:flex}#lb svg{width:min(1200px,100%);max-height:85vh;background:#191817;border-radius:8px}
+#lb button{position:absolute;top:50%;background:rgba(255,255,255,.1);color:#fff;border:0}
+.books{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:16px}
+.bk{display:flex;gap:14px}.cover{flex:none;width:64px;height:90px;border-radius:4px;background:linear-gradient(135deg,var(--ac),#7a3b26);display:flex;align-items:end;padding:6px;font:11px/1.2 Newsreader,serif;color:#fff}
+.bk p{margin:6px 0 0;font-size:14px;color:var(--tx2)}
+h4{margin:28px 0 0;font:600 12px Inter;text-transform:uppercase;letter-spacing:.08em;color:var(--tx2)}
+@media(max-width:860px){.pb{grid-template-columns:1fr}.side{display:none}.gal,.grid3,.books{grid-template-columns:1fr}.dl{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <span class="logo">Mean Reversion</span>
+  <nav><a href="#playbook" data-v="playbook">Плейбук</a><a href="#examples" data-v="examples">Примеры</a><a href="#books" data-v="books">Литература</a></nav>
+  <button id="th" aria-label="Сменить тему">◐ Тема</button>
+</header>
+
+<main>
+<div class="view" id="v-playbook">
+<div class="pb">
+<aside class="side"><small>Плейбук</small><div id="toc"></div></aside>
+<article id="art">
+<section id="thesis"><h2>Thesis</h2>
+<p>Плейбук описывает, как торговать рыночную неэффективность: перекос между покупателями и продавцами, когда одна сторона давит слишком сильно и цена слишком быстро уходит в одну сторону.</p>
+<div class="call ac"><span>💡</span><div><b>Главная идея</b>Монетизировать откат после чрезмерного рывка, без необходимости определять конец или разворот тренда.</div></div>
+<h3>Почему перекос случается</h3>
+<p>Крупные заявки, тонкая ликвидность перед новостями (FOMC), цепная реакция алгоритмов, паника или эйфория.</p>
+<div class="call dn"><span>⚠️</span><div><b>Важно</b>Если рывок вызван реальным изменением справедливой цены, возврата может не быть. Плейбук работает только в подходящем состоянии рынка.</div></div></section>
+
+<section id="markets"><h2>Markets</h2><p>Форекс, индексы, металлы (золото и серебро), нефть, криптовалюты.</p></section>
+
+<section id="context"><h2>Market context</h2>
+<p>Ключевые элементы для <span class="tip" tabindex="0" data-d="Возврат цены к балансу после чрезмерного рывка.">mean reversion</span>:</p>
+<ul><li>расширение цены без коррекций (импульс с <span class="tip" tabindex="0" data-d="">FVG</span> или слабое сопротивление);</li><li>цена в Premium/Discount торгового диапазона (X или X-1);</li><li>ключевой уровень (<span class="tip" tabindex="0" data-d="">KL</span>) на X или X-1.</li></ul>
+<div class="call up"><span>✅</span><div><b>Улучшают ситуацию</b>Истощение импульса; снятие фрактала без закрепления за ним.</div></div>
+<div class="mini" data-go="ex-1"><div id="m1" style="width:150px"></div><div><b style="color:var(--tx)">Пример: перекос в Premium</b><br>Нажмите, чтобы открыть в галерее →</div></div></section>
+
+<section id="tf"><h2>Timeframes</h2>
+<div class="grid3"><div class="card"><span class="mono">1W · 1D</span><br>контекст, уровни, цели</div><div class="card"><span class="mono">4h</span><br>вход и ведение позиции</div><div class="card"><span class="mono">X / X-1</span><br>рабочий и младший ТФ</div></div></section>
+
+<section id="entry"><h2>Trade entry</h2>
+<p>Вход через <span class="tip" tabindex="0" data-d="">IDM</span> и подтверждение объёмов (SNR, GAP) на X-1 по ходу к цели — это валидирует идею.</p>
+<div class="flow"><div><span>1</span>Overextension<br>Premium/Discount</div><div><span>2</span>Entry<br>X-1 IDM / Volume</div><div><span>3</span>SL<br>Strong High/Low</div><div><span>4</span>TP<br>X/X-1 <span class="tip" tabindex="0" data-d="">FTA</span></div></div></section>
+
+<section id="mgmt"><h2>Position Management</h2>
+<p>Цель — ближайшая проблемная область: границы или 50% диапазона, сильный фрактал, зоны объёма, открытие/закрытие старшей свечи. Если цель не определить — RR = 1:1. Стоп ставится на уровень отмены идеи, обычно за сильным фракталом. Безубыток — после подтверждения объёмов. Добор не рассматривается.</p>
+<div class="call"><span>⏱</span><div><b>Пересмотр идеи</b>Новые переменные на графике; время движения сильно выше среднего (3+ дня); новости и макроданные; график зависимого актива.</div></div></section>
+
+<section id="risk"><h2>Risk management</h2>
+<p>Локальные цели, по статистике <span class="mono">RR 1–1.5+</span>, винрейт <span class="mono">70%+</span>.</p></section>
+
+<section id="stand"><h2>Stand-aside</h2><p>Перед сделкой отметьте, что <b>нет</b> этих условий:</p>
+<div class="chk"><label><input type="checkbox"><span>Устойчивый тренд</span></label><label><input type="checkbox"><span>Нет Strong High/Low для постановки SL</span></label><label><input type="checkbox"><span>RR &lt; 1:1</span></label><label><input type="checkbox"><span>Грязный PA: цена разворачивается в воздухе</span></label></div></section>
+
+<section id="grades"><h2>Trade grades</h2>
+<div class="grid3">
+<div class="card"><div class="g">A+</div>Все повышающие переменные<ul><li>LRL, замедление, консолидация перед KL</li><li>Сильное отклонение к границе</li><li>Подтверждение объёма на X-1</li></ul></div>
+<div class="card"><div class="g">A</div>Часть переменных<ul><li>Нет одной из ключевых</li><li>Нет понижающих</li></ul></div>
+<div class="card"><div class="g">B</div>Есть понижающие<ul><li>Сильный тренд</li><li>Близость середины диапазона</li></ul></div></div></section>
+</article></div></div>
+
+<div class="view" id="v-examples"><div class="wrap">
+<h2>Примеры</h2><p style="color:var(--tx2)">Заглушки: подставьте свои скрины.</p>
+<div id="filters"></div><div class="gal" id="gal"></div></div></div>
+
+<div class="view" id="v-ex"><div class="wrap" style="max-width:900px" id="detail"></div></div>
+
+<div class="view" id="v-books"><div class="wrap"><h2>Литература</h2>
+<h4>Структура рынка и ликвидность</h4>
+<div class="books">
+<div class="bk"><div class="cover">Название книги</div><div><b>Название · Автор</b><div class="tags"><span class="tag">книга</span><span class="tag">база</span></div><p>Зачем читать: одна фраза в вашем голосе.</p></div></div>
+<div class="bk"><div class="cover">Канал</div><div><b>Название канала</b><div class="tags"><span class="tag">канал</span><span class="tag">продвинутый</span></div><p>Зачем читать: одна фраза в вашем голосе.</p></div></div></div>
+<h4>Объёмы</h4>
+<div class="books"><div class="bk"><div class="cover">Курс</div><div><b>Название курса</b><div class="tags"><span class="tag">курс</span><span class="tag">база</span></div><p>Зачем читать: одна фраза в вашем голосе.</p></div></div></div>
+<h4>Риск-менеджмент · Психология</h4>
+<div class="books"><div class="bk"><div class="cover">Статья</div><div><b>Название статьи</b><div class="tags"><span class="tag">статья</span><span class="tag">база</span></div><p>Зачем читать: одна фраза в вашем голосе.</p></div></div></div>
+</div></div>
+</main>
+
+<div id="lb"><button id="pv" style="left:16px">←</button><div id="lbc" style="width:100%;display:flex;justify-content:center"></div><button id="nx" style="right:16px">→</button></div>
+
+<script>
+const D=[
+{id:1,p:"EUR/USD",m:"Форекс",d:"Short",g:"A+",tf:"4h",dt:"12 окт",rr:"1.4",res:"Профит",n:"цель: 50% диапазона"},
+{id:2,p:"XAU/USD",m:"Металлы",d:"Long",g:"A",tf:"4h",dt:"03 окт",rr:"1.1",res:"Профит",n:"цель: сильный фрактал"},
+{id:3,p:"BTC/USD",m:"Крипта",d:"Short",g:"A",tf:"4h",dt:"28 сен",rr:"1.0",res:"Стоп",n:"стоп за сильным фракталом"},
+{id:4,p:"NAS100",m:"Индексы",d:"Long",g:"A+",tf:"4h",dt:"19 сен",rr:"1.5",res:"Профит",n:"цель: граница диапазона"},
+{id:5,p:"WTI",m:"Нефть",d:"Short",g:"B",tf:"4h",dt:"11 сен",rr:"1.0",res:"Профит",n:"RR 1:1, цель неясна"},
+{id:6,p:"GBP/USD",m:"Форекс",d:"Long",g:"A",tf:"4h",dt:"02 сен",rr:"1.3",res:"Профит",n:"цель: открытие дневной свечи"}];
+const F={Рынок:["Форекс","Индексы","Металлы","Нефть","Крипта"],Сторона:["Long","Short"],Грейд:["A+","A","B"],Итог:["Профит","Стоп"]};
+const key={Рынок:"m",Сторона:"d",Грейд:"g",Итог:"res"};
+let flt={};
+const $=s=>document.querySelector(s);
+function chart(e,stage=3,w=800,h=500){
+ let s=e.id*7919%1000,r=()=>(s=(s*16807)%2147483647)/2147483647,dir=e.d=="Short"?1:-1,N=48,c=[],p=100;
+ for(let i=0;i<N;i++){let t=i<26?-dir*.55:i<34?-dir*1.3:i<38?dir*.15:dir*.7;let o=p,cl=o+t+(r()-.5)*1.1;c.push([o,cl,Math.max(o,cl)+r()*.6,Math.min(o,cl)-r()*.6]);p=cl}
+ let k=[0,.7,.82,1][stage]*N|0,vis=c.slice(0,k),all=c.flat(),mx=Math.max(...all),mn=Math.min(...all),y=v=>20+(mx-v)/(mx-mn)*(h-40),bw=w/N;
+ let g=`<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">`;
+ for(let i=1;i<5;i++)g+=`<line x1="0" x2="${w}" y1="${i*h/5}" y2="${i*h/5}" stroke="#2f2d2a"/>`;
+ vis.forEach((q,i)=>{let up=q[1]>=q[0],col=up?"#6fa383":"#c8695f",x=i*bw+bw/2;g+=`<line x1="${x}" x2="${x}" y1="${y(q[2])}" y2="${y(q[3])}" stroke="${col}"/><rect x="${x-bw*.32}" y="${y(Math.max(q[0],q[1]))}" width="${bw*.64}" height="${Math.max(2,Math.abs(y(q[0])-y(q[1])))}" fill="${col}"/>`});
+ let ex=c[33][1];
+ if(stage>=1)g+=`<rect x="${26*bw}" y="${y(mx)}" width="${8*bw}" height="${y(c[26][0])-y(mx)}" fill="#d97757" opacity=".12" stroke="#d97757" stroke-dasharray="4"/><text x="${26*bw}" y="${y(mx)-4}" fill="#d97757" font-size="14" font-family="monospace">Overextension</text>`;
+ if(stage>=2){let ey=y(c[37][1]),sl=y(dir==1?mx:mn),tp=y(c[26][0]);g+=`<line x1="${37*bw}" x2="${w}" y1="${ey}" y2="${ey}" stroke="#ece9e4" stroke-dasharray="3"/><line x1="${37*bw}" x2="${w}" y1="${sl}" y2="${sl}" stroke="#c8695f"/><line x1="${37*bw}" x2="${w}" y1="${tp}" y2="${tp}" stroke="#6fa383"/><text x="${w-60}" y="${ey-5}" fill="#ece9e4" font-size="13" font-family="monospace">Entry</text><text x="${w-30}" y="${sl-5}" fill="#c8695f" font-size="13" font-family="monospace">SL</text><text x="${w-30}" y="${tp-5}" fill="#6fa383" font-size="13" font-family="monospace">TP</text>`}
+ return g+`<text x="12" y="${h-10}" fill="#9b968e" font-size="14" font-family="monospace">${e.p} · ${e.tf} · заглушка</text></svg>`}
+function tags(e){return `<div class="tags"><span class="tag">${e.p}</span><span class="tag ${e.d[0]}">${e.d}</span><span class="tag gr">${e.g}</span><span class="tag">${e.tf}</span><span class="tag">${e.dt}</span></div>`}
+function gallery(){
+ $("#filters").innerHTML=Object.entries(F).map(([k,v])=>`<div class="chips"><small>${k}</small>${v.map(x=>`<button class="chip ${flt[k]==x?"on":""}" data-k="${k}" data-x="${x}">${x}</button>`).join("")}</div>`).join("");
+ let l=D.filter(e=>Object.entries(flt).every(([k,v])=>e[key[k]]==v));
+ $("#gal").innerHTML=l.map(e=>`<div class="ex" data-go="ex-${e.id}">${chart(e)}<div class="b">${tags(e)}RR ${e.rr}, ${e.n}</div></div>`).join("")||"<p>Ничего не найдено</p>"}
+let cur=null,stage=3;
+function detail(id){
+ cur=D.find(e=>e.id==id);if(!cur)return;
+ let i=D.indexOf(cur),pv=D[i-1],nx=D[i+1];
+ $("#detail").innerHTML=`<a href="#examples">← Все примеры</a><h2 style="margin-top:12px">${cur.p} · ${cur.d}</h2>${tags(cur)}
+ <div class="tabs">${["Контекст","Вход","Результат"].map((t,j)=>`<button data-st="${j+1}" class="${stage==j+1?"on":""}">${t}</button>`).join("")}</div>
+ <div class="big" id="bigc">${chart(cur,stage)}</div>
+ <h3>Разбор</h3><dl class="dl"><dt>Перекос</dt><dd>Импульс без откатов, замедление в конце</dd><dt>Premium/Discount</dt><dd>Верхняя граница диапазона X</dd><dt>Ключевой уровень</dt><dd>Не снятый старший фрактал</dd><dt>IDM + объём</dt><dd>X-1 IDM, затем SNR/GAP</dd><dt>SL / TP</dt><dd>За Strong High/Low · ${cur.n}</dd><dt>Итог</dt><dd class="mono">${cur.res}, RR ${cur.rr}</dd></dl>
+ <div class="pn"><span>${pv?`<a href="#ex-${pv.id}">← ${pv.p}</a>`:""}</span><span>${nx?`<a href="#ex-${nx.id}">${nx.p} →</a>`:""}</span></div>`}
+function lb(d){if(!cur)return;let i=D.indexOf(cur)+d;if(D[i]){cur=D[i];}$("#lbc").innerHTML=chart(cur,stage);$("#lb").classList.add("on")}
+function route(){
+ let h=location.hash.slice(1)||"playbook",v=h.startsWith("ex-")?"ex":h;
+ document.querySelectorAll(".view").forEach(e=>e.classList.toggle("on",e.id=="v-"+v));
+ document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on",a.dataset.v==(v=="ex"?"examples":v)));
+ if(v=="ex")detail(h.slice(3));if(v=="examples")gallery();window.scrollTo(0,0)}
+addEventListener("hashchange",route);
+document.addEventListener("click",e=>{
+ let t=e.target,x;
+ if(x=t.closest("[data-go]"))location.hash=x.dataset.go;
+ else if(x=t.closest(".chip")){let k=x.dataset.k;flt[k]==x.dataset.x?delete flt[k]:flt[k]=x.dataset.x;gallery()}
+ else if(x=t.closest("[data-st]")){stage=+x.dataset.st;detail(cur.id)}
+ else if(t.closest("#bigc"))lb(0);
+ else if(t.id=="lb")t.classList.remove("on");
+ else if(t.id=="pv")lb(-1);else if(t.id=="nx")lb(1)});
+addEventListener("keydown",e=>{if(!$("#lb").classList.contains("on"))return;if(e.key=="Escape")$("#lb").classList.remove("on");if(e.key=="ArrowLeft")lb(-1);if(e.key=="ArrowRight")lb(1)});
+$("#th").onclick=()=>{let r=document.documentElement;r.dataset.theme=r.dataset.theme=="light"?"dark":"light"};
+const G={IDM:"Inducement — ловушка/приманка перед настоящим движением. (черновик, замените своим определением)",FTA:"First Trading Area — ближайшая проблемная область на пути цены. (черновик)",KL:"Key Level — ключевой уровень поддержки/сопротивления.",FVG:"Fair Value Gap — неэффективность между свечами после импульса."};
+document.querySelectorAll(".tip").forEach(t=>{if(!t.dataset.d)t.dataset.d=G[t.textContent.trim()]||""});
+$("#m1").innerHTML=chart(D[0],3);$("#m1").firstChild.style.cssText="width:150px;aspect-ratio:16/10;border-radius:6px";
+const secs=[...document.querySelectorAll("#art section")];
+$("#toc").innerHTML=secs.map(s=>`<a href="#" data-s="${s.id}">${s.querySelector("h2").textContent}</a>`).join("");
+$("#toc").onclick=e=>{let a=e.target.closest("a");if(a){e.preventDefault();document.getElementById(a.dataset.s).scrollIntoView({behavior:"smooth"})}};
+new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)document.querySelectorAll("#toc a").forEach(a=>a.classList.toggle("on",a.dataset.s==e.target.id))}),{rootMargin:"-20% 0px -70% 0px"}).observe&&secs.forEach(s=>window._o=window._o);
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)document.querySelectorAll("#toc a").forEach(a=>a.classList.toggle("on",a.dataset.s==e.target.id))}),{rootMargin:"-20% 0px -70% 0px"});
+secs.forEach(s=>io.observe(s));
+route();
+</script>
+</body>
+</html>

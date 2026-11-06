@@ -1,0 +1,32 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Callout from '../components/Callout.astro';
+import Term from '../components/Term.astro';
+import Checklist from '../components/Checklist.astro';
+import Scheme from '../components/Scheme.astro';
+import GradeCards from '../components/GradeCards.astro';
+
+const entries = (await getCollection('playbook')).sort((a, b) => a.id.localeCompare(b.id));
+const rendered = await Promise.all(entries.map(async (e) => ({ e, Content: (await render(e)).Content })));
+const components = { Callout, Term, Checklist, Scheme, GradeCards };
+---
+<Base title="Плейбук — Mean Reversion">
+  <div class="pb">
+    <aside class="side"><small>Плейбук</small>
+      {entries.map((e) => <a href={`#${e.id}`} data-s={e.id}>{e.data.title}</a>)}
+    </aside>
+    <article>
+      {rendered.map(({ e, Content }) => (
+        <section id={e.id}><h2>{e.data.title}</h2><Content components={components} /></section>
+      ))}
+    </article>
+  </div>
+  <script>
+    const links = [...document.querySelectorAll<HTMLAnchorElement>('.side a')];
+    const io = new IntersectionObserver((es) => es.forEach((x) => {
+      if (x.isIntersecting) links.forEach((a) => a.classList.toggle('on', a.dataset.s === x.target.id));
+    }), { rootMargin: '-20% 0px -70% 0px' });
+    document.querySelectorAll('.pb section').forEach((s) => io.observe(s));
+  </script>
+</Base>

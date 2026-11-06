@@ -1,0 +1,44 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+const all = (await getCollection('examples')).sort((a, b) => +b.data.date - +a.data.date);
+const groups = [
+  ['Рынок', 'market', ['Форекс', 'Индексы', 'Металлы', 'Нефть', 'Крипта']],
+  ['Сторона', 'direction', ['Long', 'Short']],
+  ['Грейд', 'grade', ['A+', 'A', 'B']],
+  ['Итог', 'result', ['Профит', 'Стоп']],
+] as const;
+const fmt = (d: Date) => d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
+---
+<Base title="Примеры — Mean Reversion">
+  <div class="wrap">
+    <h2>Примеры</h2>
+    {groups.map(([label, key, values]) => (
+      <div class="chips"><small>{label}</small>
+        {values.map((v) => <button class="chip" data-k={key} data-v={v}>{v}</button>)}
+      </div>
+    ))}
+    <div class="gal">
+      {all.map((e) => (
+        <a class="ex" href={`/examples/${e.id}`} data-market={e.data.market} data-direction={e.data.direction} data-grade={e.data.grade} data-result={e.data.result}>
+          <img src={e.data.images.context} alt={`${e.data.pair} ${e.data.direction}`} loading="lazy" />
+          <div class="b">
+            <div class="tags"><span class="tag">{e.data.pair}</span><span class={`tag ${e.data.direction}`}>{e.data.direction}</span><span class="tag gr">{e.data.grade}</span><span class="tag">{e.data.tf}</span><span class="tag">{fmt(e.data.date)}</span></div>
+            RR {e.data.rr}, цель: {e.data.target}
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+  <script>
+    const active: Record<string, string> = {};
+    const cards = [...document.querySelectorAll<HTMLElement>('.ex')];
+    document.querySelectorAll<HTMLButtonElement>('.chip').forEach((b) => b.addEventListener('click', () => {
+      const { k, v } = b.dataset as { k: string; v: string };
+      if (active[k] === v) delete active[k]; else active[k] = v;
+      document.querySelectorAll<HTMLButtonElement>(`.chip[data-k="${k}"]`).forEach((x) => x.classList.toggle('on', active[k] === x.dataset.v));
+      cards.forEach((c) => { c.hidden = !Object.entries(active).every(([kk, vv]) => c.dataset[kk] === vv); });
+    }));
+  </script>
+</Base>

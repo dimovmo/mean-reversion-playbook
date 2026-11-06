@@ -1,0 +1,6 @@
+---
+import glossary from '../data/glossary.json';
+const { t } = Astro.props;
+const d = (glossary as Record<string, string>)[t] ?? '';
+---
+<span class="tip" tabindex="0" data-d={d}>{t}</span>

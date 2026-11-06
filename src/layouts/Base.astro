@@ -1,0 +1,39 @@
+---
+import '../styles/global.css';
+const { title = 'Mean Reversion' } = Astro.props;
+const path = Astro.url.pathname;
+const links = [['/playbook', 'Плейбук'], ['/examples', 'Примеры'], ['/books', 'Литература']];
+---
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>{title}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet" />
+  <script is:inline>
+    try { const t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch {}
+  </script>
+</head>
+<body>
+  <header class="top">
+    <a class="logo" href="/playbook">Mean Reversion</a>
+    <nav>
+      {links.map(([href, label]) => (
+        <a href={href} aria-current={path.startsWith(href) ? 'page' : undefined}>{label}</a>
+      ))}
+    </nav>
+    <button id="theme" aria-label="Сменить тему">◐ Тема</button>
+  </header>
+  <slot />
+  <script is:inline>
+    document.getElementById('theme').onclick = () => {
+      const r = document.documentElement;
+      const next = r.dataset.theme === 'light' ? 'dark' : 'light';
+      r.dataset.theme = next;
+      try { localStorage.setItem('theme', next); } catch {}
+    };
+  </script>
+</body>
+</html>

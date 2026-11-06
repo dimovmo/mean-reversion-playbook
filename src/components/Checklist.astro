@@ -1,0 +1,4 @@
+---
+const { items = [] } = Astro.props as { items: string[] };
+---
+<div class="chk">{items.map((i) => <label><input type="checkbox" /><span>{i}</span></label>)}</div>
