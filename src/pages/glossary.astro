@@ -1,0 +1,105 @@
+---
+import fs from 'node:fs';
+import path from 'node:path';
+import Base from '../layouts/Base.astro';
+import glossary from '../data/glossary.json';
+
+// more — 1–2 абзаца для окна «Подробнее»; если нет, показывается краткое определение d
+type Entry = { id: string; term: string; en?: string; d: string; more?: string[] };
+// Без английской расшифровки описание начинается с заглавной
+const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
+
+// Скрины термина: public/glossary/<id>/*.webp|png|jpg, в порядке имён файлов (1.webp, 2.webp…)
+const imgs = (id: string) => {
+  const dir = path.join(process.cwd(), 'public/glossary', id);
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir)
+    .filter((f) => /\.(webp|png|jpe?g|avif)$/i.test(f))
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    .map((f) => `/glossary/${encodeURIComponent(id)}/${encodeURIComponent(f)}`);
+};
+
+const terms = [...(glossary as Entry[])].sort((a, b) => a.term.localeCompare(b.term));
+const data = Object.fromEntries(terms.map((x) => [x.id, {
+  term: x.term,
+  en: x.en ?? '',
+  text: x.more?.length ? x.more : [cap(x.d)],
+  imgs: imgs(x.id),
+}]));
+---
+<Base title="Глоссарий — Mean Reversion">
+  <div class="wrap">
+    <h2>Глоссарий</h2>
+    <dl class="dl gl">
+      {terms.map((x) => (
+        <>
+          <dt id={x.id} class="mono">{x.term}</dt>
+          <dd>{x.en ? <><b>{x.en}</b> — {x.d}</> : cap(x.d)} <button class="ex-btn" data-id={x.id} aria-haspopup="dialog">Подробнее</button></dd>
+        </>
+      ))}
+    </dl>
+  </div>
+
+  <dialog id="gm" class="gm" aria-labelledby="gm-t">
+    <div class="gm-head">
+      <div><h3 id="gm-t" class="mono"></h3><span class="gm-en"></span></div>
+      <button class="gm-x" aria-label="Закрыть">✕</button>
+    </div>
+    <div class="gm-sl">
+      <img alt="" />
+      <button class="gm-nav gm-prev" aria-label="Предыдущий скрин">‹</button>
+      <button class="gm-nav gm-next" aria-label="Следующий скрин">›</button>
+      <span class="gm-cnt"></span>
+    </div>
+    <div class="gm-txt"></div>
+  </dialog>
+
+  <script type="application/json" id="gm-data" set:html={JSON.stringify(data)} />
+  <script is:inline>
+    const DATA = JSON.parse(document.getElementById('gm-data').textContent);
+    const PH = '/examples/placeholder.svg';
+    const dlg = document.getElementById('gm'), $ = (s) => dlg.querySelector(s);
+    const img = $('.gm-sl img'), prev = $('.gm-prev'), next = $('.gm-next'), cnt = $('.gm-cnt');
+    let list = [], i = 0, alt = '';
+
+    img.onerror = () => { if (!img.src.endsWith(PH)) img.src = PH; };
+    const show = (n) => {
+      i = (n + list.length) % list.length;
+      img.src = list[i];
+      img.alt = list.length > 1 ? `${alt} — пример ${i + 1} из ${list.length}` : alt;
+      cnt.textContent = `${i + 1} / ${list.length}`;
+    };
+
+    const open = (id) => {
+      const x = DATA[id]; if (!x) return;
+      $('#gm-t').textContent = x.term;
+      $('.gm-en').textContent = x.en;
+      const txt = $('.gm-txt'); txt.replaceChildren();
+      x.text.forEach((p) => { const el = document.createElement('p'); el.textContent = p; txt.append(el); });
+      list = x.imgs.length ? x.imgs : [PH]; alt = x.en || x.term;
+      dlg.classList.toggle('one', list.length < 2);
+      show(0);
+      dlg.showModal();
+    };
+
+    document.querySelectorAll('.ex-btn').forEach((b) => b.addEventListener('click', () => open(b.dataset.id)));
+    prev.onclick = () => show(i - 1);
+    next.onclick = () => show(i + 1);
+    $('.gm-x').onclick = () => dlg.close();
+    // Клик по затемнению вокруг окна закрывает его
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+    dlg.addEventListener('keydown', (e) => {
+      if (list.length < 2) return;
+      if (e.key === 'ArrowLeft') show(i - 1);
+      if (e.key === 'ArrowRight') show(i + 1);
+    });
+    // Свайп на телефоне
+    let x0 = null;
+    img.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+    img.addEventListener('touchend', (e) => {
+      if (x0 === null || list.length < 2) return;
+      const dx = e.changedTouches[0].clientX - x0; x0 = null;
+      if (Math.abs(dx) > 40) show(i + (dx < 0 ? 1 : -1));
+    });
+  </script>
+</Base>

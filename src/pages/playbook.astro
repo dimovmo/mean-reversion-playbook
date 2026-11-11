@@ -5,11 +5,10 @@ import Callout from '../components/Callout.astro';
 import Term from '../components/Term.astro';
 import Checklist from '../components/Checklist.astro';
 import Scheme from '../components/Scheme.astro';
-import GradeCards from '../components/GradeCards.astro';
 
 const entries = (await getCollection('playbook')).sort((a, b) => a.id.localeCompare(b.id));
 const rendered = await Promise.all(entries.map(async (e) => ({ e, Content: (await render(e)).Content })));
-const components = { Callout, Term, Checklist, Scheme, GradeCards };
+const components = { Callout, Term, Checklist, Scheme };
 ---
 <Base title="Плейбук — Mean Reversion">
   <div class="pb">

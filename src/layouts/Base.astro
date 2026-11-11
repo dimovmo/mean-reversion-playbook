@@ -2,7 +2,7 @@
 import '../styles/global.css';
 const { title = 'Mean Reversion' } = Astro.props;
 const path = Astro.url.pathname;
-const links = [['/playbook', 'Плейбук'], ['/examples', 'Примеры'], ['/books', 'Литература']];
+const links = [['/playbook', 'Playbook'], ['/examples', 'Примеры'], ['/glossary', 'Глоссарий']];
 ---
 <!doctype html>
 <html lang="ru">
@@ -11,7 +11,7 @@ const links = [['/playbook', 'Плейбук'], ['/examples', 'Примеры'],
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>{title}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet" />
   <script is:inline>
     try { const t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch {}
   </script>

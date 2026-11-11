@@ -1,6 +1,6 @@
 ---
-// type: note | good | stop
+// type: note | good | stop | time
 const { type = 'note', title } = Astro.props;
-const icon = { note: '💡', good: '✅', stop: '⚠️' }[type as 'note' | 'good' | 'stop'];
+const icon = { note: '💡', good: '✅', stop: '⚠️', time: '⏱' }[type as 'note' | 'good' | 'stop' | 'time'];
 ---
 <div class={`call ${type}`}><span>{icon}</span><div>{title && <b>{title}</b>}<slot /></div></div>
