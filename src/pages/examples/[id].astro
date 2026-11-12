@@ -9,31 +9,46 @@ export async function getStaticPaths() {
 const { entry, prev, next } = Astro.props;
 const { Content } = await render(entry);
 const d = entry.data;
-const stages = [['Контекст', d.images.context], ['Вход', d.images.entry], ['Результат', d.images.outcome]];
 ---
 <Base title={`${d.pair} ${d.direction} — Mean Reversion`}>
-  <div class="wrap" style="max-width:900px">
+  <div class="wrap trade-wrap">
     <a href="/examples">← Все примеры</a>
-    <h2 style="margin-top:12px">{d.pair} · {d.direction}</h2>
-    <div class="tags"><span class="tag">{d.market}</span><span class="tag gr">{d.grade}</span><span class="tag">{d.tf}</span><span class="tag">RR {d.rr}</span><span class="tag">{d.result}</span></div>
-    <div class="tabs">{stages.map(([label], i) => <button data-i={i} class={i === 0 ? 'on' : ''}>{label}</button>)}</div>
-    <div class="big"><img id="main" src={stages[0][1]} alt={d.pair} /></div>
-    <dl class="dl"><dt>Цель</dt><dd>{d.target}</dd></dl>
-    <h3 style="margin-top:24px">Разбор</h3>
-    <Content />
+    <h2 style="margin-top:12px">{d.pair}</h2>
+    <div class="tags"><span class={`tag ${d.direction}`}>{d.direction}</span><span class="tag">{d.date.toISOString().slice(0, 10)}</span><span class="tag">{d.market}</span><span class="tag">{d.result}</span><span class="tag">RR {d.rr}</span></div>
+    <div class="trade">
+      <div class="shots">
+        {d.images.map((im, i) => (
+          <figure class="big">
+            <img src={im.src} alt={`${d.pair}${im.label ? ` ${im.label}` : ''}`} loading={i === 0 ? 'eager' : 'lazy'} />
+            {im.label && <figcaption class="tag">{im.label}</figcaption>}
+          </figure>
+        ))}
+      </div>
+      <aside class="card tcard">
+        <h4>Thesis</h4><p>{d.thesis || '—'}</p>
+        {[['SL', d.sl], ['TP', d.tp]].map(([h, xs]) => <>
+          <h4>{h}</h4>
+          {xs.length > 1
+            ? <ol class="lv">{xs.map((x) => <li>{x}</li>)}</ol>
+            : <p>{xs[0] || '—'}</p>}
+        </>)}
+        <h4>Entry</h4><p>{d.entry || '—'}</p>
+        {d.ev.length > 0 && <>
+          <h4>+EV</h4>
+          <div class="ev">{d.ev.map((x) => <span class="evt">{x}</span>)}</div>
+        </>}
+        <h4>Comment</h4><div class="tc-body"><Content /></div>
+      </aside>
+    </div>
     <div class="pn">
       <span>{prev && <a href={`/examples/${prev.id}`}>← {prev.data.pair}</a>}</span>
       <span>{next && <a href={`/examples/${next.id}`}>{next.data.pair} →</a>}</span>
     </div>
   </div>
   <div id="lb"><img alt="" /></div>
-  <script define:vars={{ srcs: stages.map((s) => s[1]) }}>
-    const main = document.getElementById('main'), lb = document.getElementById('lb');
-    document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => {
-      document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('on', x === b));
-      main.src = srcs[b.dataset.i];
-    }));
-    main.addEventListener('click', () => { lb.firstElementChild.src = main.src; lb.classList.add('on'); });
+  <script is:inline>
+    const lb = document.getElementById('lb');
+    document.querySelectorAll('.big img').forEach((img) => img.addEventListener('click', () => { lb.firstElementChild.src = img.src; lb.classList.add('on'); }));
     lb.addEventListener('click', () => lb.classList.remove('on'));
     addEventListener('keydown', (e) => { if (e.key === 'Escape') lb.classList.remove('on'); });
   </script>

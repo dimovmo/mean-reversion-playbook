@@ -4,12 +4,26 @@ import Base from '../../layouts/Base.astro';
 
 const all = (await getCollection('examples')).sort((a, b) => +b.data.date - +a.data.date);
 const groups = [
-  ['Рынок', 'market', ['Форекс', 'Индексы', 'Металлы', 'Нефть', 'Крипта']],
-  ['Сторона', 'direction', ['Long', 'Short']],
-  ['Грейд', 'grade', ['A+', 'A', 'B']],
-  ['Итог', 'result', ['Профит', 'Стоп']],
+  ['Рынок', 'market', ['Форекс', 'Индексы', 'Металлы', 'Нефть', 'Криптовалюта']],
+  // ['Сторона', 'direction', ['Long', 'Short']],
+  // ['Итог', 'result', ['Профит', 'Стоп']],
 ] as const;
 const fmt = (d: Date) => d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
+// группировка по месяцам (all уже отсортирован от новых к старым)
+const months: { key: string; label: string; items: typeof all }[] = [];
+for (const e of all) {
+  const d = e.data.date;
+  const key = `${d.getFullYear()}-${d.getMonth()}`;
+  if (months.at(-1)?.key !== key) {
+    const m = d.toLocaleDateString('ru-RU', { month: 'long' });
+    months.push({ key, label: `${m[0].toUpperCase()}${m.slice(1)} ${d.getFullYear()}`, items: [] });
+  }
+  months.at(-1)!.items.push(e);
+}
+const plural = (n: number) => {
+  const f = { one: 'сделка', few: 'сделки', many: 'сделок', other: 'сделки' } as Record<string, string>;
+  return `${n} ${f[new Intl.PluralRules('ru-RU').select(n)]}`;
+};
 ---
 <Base title="Примеры — Mean Reversion">
   <div class="wrap">
@@ -19,19 +33,26 @@ const fmt = (d: Date) => d.toLocaleDateString('ru-RU', { day: '2-digit', month: 
         {values.map((v) => <button class="chip" data-k={key} data-v={v}>{v}</button>)}
       </div>
     ))}
-    <div class="gal">
-      {all.map((e) => (
-        <a class="ex" href={`/examples/${e.id}`} data-market={e.data.market} data-direction={e.data.direction} data-grade={e.data.grade} data-result={e.data.result}>
-          <img src={e.data.images.context} alt={`${e.data.pair} ${e.data.direction}`} loading="lazy" />
-          <div class="b">
-            <div class="tags"><span class="tag">{e.data.pair}</span><span class={`tag ${e.data.direction}`}>{e.data.direction}</span><span class="tag gr">{e.data.grade}</span><span class="tag">{e.data.tf}</span><span class="tag">{fmt(e.data.date)}</span></div>
-            RR {e.data.rr}, цель: {e.data.target}
-          </div>
-        </a>
-      ))}
-    </div>
+    {months.map((m) => (
+      <section class="month">
+        <h3 class="month-h"><span>{m.label}</span><small class="month-n">{plural(m.items.length)}</small></h3>
+        <div class="gal">
+          {m.items.map((e) => (
+            <a class="ex" href={`/examples/${e.id}`} data-market={e.data.market} data-direction={e.data.direction} data-result={e.data.result}>
+              <img src={e.data.images[0].src} alt={`${e.data.pair} ${e.data.direction}`} loading="lazy" />
+              <div class="b">
+                <div class="tags"><span class="tag">{e.data.pair}</span><span class={`tag ${e.data.direction}`}>{e.data.direction}</span><span class="tag">{fmt(e.data.date)}</span>{e.data.ev.length > 0 && <span class="tag evc" title={e.data.ev.join('\n')}>+EV {e.data.ev.length}</span>}</div>
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+    ))}
   </div>
   <script>
+    const forms: Record<string, string> = { one: 'сделка', few: 'сделки', many: 'сделок', other: 'сделки' };
+    const pr = new Intl.PluralRules('ru-RU');
+    const plural = (n: number) => `${n} ${forms[pr.select(n)]}`;
     const active: Record<string, string> = {};
     const cards = [...document.querySelectorAll<HTMLElement>('.ex')];
     document.querySelectorAll<HTMLButtonElement>('.chip').forEach((b) => b.addEventListener('click', () => {
@@ -39,6 +60,12 @@ const fmt = (d: Date) => d.toLocaleDateString('ru-RU', { day: '2-digit', month: 
       if (active[k] === v) delete active[k]; else active[k] = v;
       document.querySelectorAll<HTMLButtonElement>(`.chip[data-k="${k}"]`).forEach((x) => x.classList.toggle('on', active[k] === x.dataset.v));
       cards.forEach((c) => { c.hidden = !Object.entries(active).every(([kk, vv]) => c.dataset[kk] === vv); });
+      // прячем пустые месяцы и обновляем счётчик
+      document.querySelectorAll<HTMLElement>('.month').forEach((m) => {
+        const n = m.querySelectorAll('.ex:not([hidden])').length;
+        m.hidden = n === 0;
+        m.querySelector('.month-n')!.textContent = plural(n);
+      });
     }));
   </script>
 </Base>

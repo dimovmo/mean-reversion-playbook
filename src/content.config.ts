@@ -6,20 +6,33 @@ const playbook = defineCollection({
   schema: z.object({ title: z.string() }),
 });
 
+// один SL/TP строкой или до трёх списком: tp: ["FTA: 4h FVG", "1h Swing Low"]
+// значения с двоеточием — в кавычках, иначе YAML прочитает их как объект
+const levels = z
+  .union([z.string(), z.array(z.string()).min(1).max(3)])
+  .transform((x) => (typeof x === 'string' ? [x] : x));
+
 const examples = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/examples' }),
   schema: z.object({
     pair: z.string(),
-    market: z.enum(['Форекс', 'Индексы', 'Металлы', 'Нефть', 'Крипта']),
+    market: z.enum(['Форекс', 'Индексы', 'Металлы', 'Нефть', 'Криптовалюта']),
     direction: z.enum(['Long', 'Short']),
-    grade: z.enum(['A+', 'A', 'B']),
-    tf: z.string().default('4h'),
     date: z.coerce.date(),
     rr: z.number(),
     result: z.enum(['Профит', 'Стоп']),
-    target: z.string(),
-    // пути относительно /public, например /examples/eurusd-context.webp
-    images: z.object({ context: z.string(), entry: z.string(), outcome: z.string() }),
+    thesis: z.string().optional(),
+    sl: levels.default([]),
+    tp: levels,
+    entry: z.string().optional(),
+    // факторы +EV этой сделки, свободным текстом: [LRL, RSI > 75, Deep premium]
+    ev: z.array(z.string()).default([]),
+    // скрины по порядку показа; путь относительно /public.
+    // можно просто строкой или с подписью: { src: /examples/ger40-4h.png, label: 4h }
+    images: z
+      .array(z.union([z.string(), z.object({ src: z.string(), label: z.string().optional() })]))
+      .min(1)
+      .transform((xs) => xs.map((x) => (typeof x === 'string' ? { src: x, label: undefined } : x))),
   }),
 });
 
