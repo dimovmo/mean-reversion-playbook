@@ -1,10 +1,10 @@
 ---
-import glossary from '../data/glossary.json';
+import { getCollection } from 'astro:content';
 
-type Entry = { id: string; term: string; en?: string; d: string; aliases?: string[] };
 // t — сокращение, id или alias термина, например <Term t="FVG" /> или <Term t="GAP" />
 const { t } = Astro.props as { t: string };
-const e = (glossary as Entry[]).find((x) => x.id === t || x.term === t || x.aliases?.includes(t));
+const found = (await getCollection('glossary')).find((x) => x.id === t || x.data.term === t || x.data.aliases.includes(t));
+const e = found && { id: found.id, ...found.data };
 const tip = e && (e.en ? `${e.en} — ${e.d}` : e.d[0].toUpperCase() + e.d.slice(1));
 ---
 {e ? <a class="tip" href={`/glossary#${e.id}`} data-d={tip}>{t}</a> : <span>{t}</span>}

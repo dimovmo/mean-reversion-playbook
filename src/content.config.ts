@@ -25,7 +25,7 @@ const examples = defineCollection({
     sl: levels.default([]),
     tp: levels,
     entry: z.string().optional(),
-    // факторы +EV этой сделки, свободным текстом: [LRL, RSI > 75, Deep premium]
+    // Pros этой сделки — факторы, повышающие её качество, свободным текстом: [LRL, RSI > 75, Deep premium]
     ev: z.array(z.string()).default([]),
     // скрины по порядку показа; путь относительно /public.
     // можно просто строкой или с подписью: { src: /examples/ger40-4h.png, label: 4h }
@@ -36,4 +36,20 @@ const examples = defineCollection({
   }),
 });
 
-export const collections = { playbook, examples };
+// Термин = файл src/content/glossary/<id>.md; id — имя файла как есть (якорь /glossary#<id>, папка скринов public/glossary/<id>/).
+// d — краткое определение для подсказки <Term>, тело файла — текст окна «Подробнее» (markdown, можно пустым).
+const glossary = defineCollection({
+  loader: glob({
+    pattern: '**/*.md',
+    base: './src/content/glossary',
+    generateId: ({ entry }) => entry.replace(/\.md$/, ''),
+  }),
+  schema: z.object({
+    term: z.string(),
+    en: z.string().optional(),
+    d: z.string(),
+    aliases: z.array(z.string()).default([]),
+  }),
+});
+
+export const collections = { playbook, examples, glossary };

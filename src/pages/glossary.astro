@@ -1,11 +1,10 @@
 ---
 import fs from 'node:fs';
 import path from 'node:path';
+import { getCollection, render } from 'astro:content';
 import Base from '../layouts/Base.astro';
-import glossary from '../data/glossary.json';
 
-// more — 1–2 абзаца для окна «Подробнее»; если нет, показывается краткое определение d
-type Entry = { id: string; term: string; en?: string; d: string; more?: string[] };
+// Тело .md-файла термина — текст окна «Подробнее»; если пусто, показывается краткое определение d
 // Без английской расшифровки описание начинается с заглавной
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
@@ -19,13 +18,15 @@ const imgs = (id: string) => {
     .map((f) => `/glossary/${encodeURIComponent(id)}/${encodeURIComponent(f)}`);
 };
 
-const terms = [...(glossary as Entry[])].sort((a, b) => a.term.localeCompare(b.term));
+const terms = (await getCollection('glossary'))
+  .map((x) => ({ id: x.id, body: x.body?.trim(), entry: x, ...x.data }))
+  .sort((a, b) => a.term.localeCompare(b.term));
 const data = Object.fromEntries(terms.map((x) => [x.id, {
   term: x.term,
   en: x.en ?? '',
-  text: x.more?.length ? x.more : [cap(x.d)],
   imgs: imgs(x.id),
 }]));
+const bodies = await Promise.all(terms.map(async (x) => ({ id: x.id, Content: x.body ? (await render(x.entry)).Content : null })));
 ---
 <Base title="Глоссарий — Mean Reversion">
   <div class="wrap">
@@ -54,6 +55,9 @@ const data = Object.fromEntries(terms.map((x) => [x.id, {
     <div class="gm-txt"></div>
   </dialog>
 
+  {bodies.map(({ id, Content }) => (
+    <template data-more={id}>{Content ? <Content /> : <p>{cap(terms.find((x) => x.id === id)!.d)}</p>}</template>
+  ))}
   <script type="application/json" id="gm-data" set:html={JSON.stringify(data)} />
   <script is:inline>
     const DATA = JSON.parse(document.getElementById('gm-data').textContent);
@@ -74,8 +78,8 @@ const data = Object.fromEntries(terms.map((x) => [x.id, {
       const x = DATA[id]; if (!x) return;
       $('#gm-t').textContent = x.term;
       $('.gm-en').textContent = x.en;
-      const txt = $('.gm-txt'); txt.replaceChildren();
-      x.text.forEach((p) => { const el = document.createElement('p'); el.textContent = p; txt.append(el); });
+      const tpl = document.querySelector(`template[data-more="${CSS.escape(id)}"]`);
+      $('.gm-txt').replaceChildren(tpl.content.cloneNode(true));
       list = x.imgs.length ? x.imgs : [PH]; alt = x.en || x.term;
       dlg.classList.toggle('one', list.length < 2);
       show(0);
