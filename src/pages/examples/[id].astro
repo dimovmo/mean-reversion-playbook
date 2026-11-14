@@ -19,7 +19,8 @@ const d = entry.data;
       <div class="shots">
         {d.images.map((im, i) => (
           <figure class="big">
-            <img src={im.src} alt={`${d.pair}${im.label ? ` ${im.label}` : ''}`} loading={i === 0 ? 'eager' : 'lazy'} />
+            <img class={im.light && 'th-dark'} src={im.src} alt={`${d.pair}${im.label ? ` ${im.label}` : ''}`} loading={i === 0 ? 'eager' : 'lazy'} />
+            {im.light && <img class="th-light" src={im.light} alt={`${d.pair}${im.label ? ` ${im.label}` : ''}`} loading="lazy" />}
             {im.label && <figcaption class="tag">{im.label}</figcaption>}
           </figure>
         ))}

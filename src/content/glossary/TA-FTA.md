@@ -2,6 +2,8 @@
 term: "TA/FTA"
 en: "Trouble Area / First Trouble Area"
 d: "(первая) зона по ходу движения, где цена может встретить сопротивление/поддержку"
+images:
+  - src: /glossary/ta-fta-1.png
 ---
 Чаще всего это:
 - границы или 0.50 DR,

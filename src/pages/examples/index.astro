@@ -39,7 +39,8 @@ const plural = (n: number) => {
         <div class="gal">
           {m.items.map((e) => (
             <a class="ex" href={`/examples/${e.id}`} data-market={e.data.market} data-direction={e.data.direction} data-result={e.data.result}>
-              <img src={e.data.images[0].src} alt={`${e.data.pair} ${e.data.direction}`} loading="lazy" />
+              <img class={e.data.images[0].light && 'th-dark'} src={e.data.images[0].src} alt={`${e.data.pair} ${e.data.direction}`} loading="lazy" />
+              {e.data.images[0].light && <img class="th-light" src={e.data.images[0].light} alt={`${e.data.pair} ${e.data.direction}`} loading="lazy" />}
               <div class="b">
                 <div class="tags"><span class="tag">{e.data.pair}</span><span class={`tag ${e.data.direction}`}>{e.data.direction}</span><span class="tag">{fmt(e.data.date)}</span>{e.data.ev.length > 0 && <span class="tag evc" title={e.data.ev.join('\n')}>Pros {e.data.ev.length}</span>}</div>
               </div>

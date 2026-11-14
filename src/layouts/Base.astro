@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import '../styles/style-cyber.css';
 const { title = 'Mean Reversion' } = Astro.props;
 const path = Astro.url.pathname;
 const links = [['/playbook', 'Playbook'], ['/examples', 'Примеры'], ['/glossary', 'Глоссарий']];
@@ -11,9 +12,14 @@ const links = [['/playbook', 'Playbook'], ['/examples', 'Примеры'], ['/gl
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>{title}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Exo+2:wght@400;500;600&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet" />
   <script is:inline>
     try { const t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch {}
+    try {
+      const q = new URLSearchParams(location.search).get('style');
+      if (q) localStorage.setItem('style', q === 'base' ? '' : q);
+      const st = localStorage.getItem('style'); if (st === 'cyber') document.documentElement.dataset.style = st;
+    } catch {}
   </script>
 </head>
 <body>
@@ -24,15 +30,50 @@ const links = [['/playbook', 'Playbook'], ['/examples', 'Примеры'], ['/gl
         <a href={href} aria-current={path.startsWith(href) ? 'page' : undefined}>{label}</a>
       ))}
     </nav>
-    <button id="theme" aria-label="Сменить тему">◐ Тема</button>
+    <button id="style" class="glasses" aria-pressed="false" aria-label="Надеть очки: киберпанк" title="Надеть очки: киберпанк">
+      <svg viewBox="0 0 32 16" width="30" height="15" aria-hidden="true">
+        <defs><linearGradient id="lens-g" x1="0" x2="1"><stop offset="0" stop-color="#00e5ff" /><stop offset="1" stop-color="#ff2bd6" /></linearGradient></defs>
+        <path class="frame" d="M1 4h30M3 4v4.5a3.5 3.5 0 0 0 3.5 3.5h3a3.5 3.5 0 0 0 3.5-3.5V6.5q3-2 6 0v2a3.5 3.5 0 0 0 3.5 3.5h3A3.5 3.5 0 0 0 29 8.5V4" />
+        <path class="lens" d="M4.5 5.5h7v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2zM20.5 5.5h7v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2z" />
+      </svg>
+    </button>
+    <button id="theme" class="theme-btn" aria-label="Светлая тема" title="Светлая тема">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <rect x="3.5" y="1.5" width="17" height="19" rx="1.5" /><path d="M2 20.5h20" />
+        <g class="day" transform="translate(0 -.5)"><circle cx="12" cy="11.5" r="2.6" /><path d="M12 6.4v1M12 15.6v1M6.9 11.5h1M16.1 11.5h1M8.4 7.9l.7.7M14.9 14.4l.7.7M8.4 15.1l.7-.7M14.9 8.6l.7-.7" /></g>
+        <g class="night" transform="translate(.6 -.5)"><path d="M14.5 14.6a4 4 0 0 1-4.6-6.3 4.4 4.4 0 1 0 4.6 6.3z" /><path d="M16 7.2v1.6M15.2 8h1.6" /></g>
+      </svg>
+    </button>
   </header>
   <slot />
   <script is:inline>
-    document.getElementById('theme').onclick = () => {
-      const r = document.documentElement;
-      const next = r.dataset.theme === 'light' ? 'dark' : 'light';
+    const r = document.documentElement;
+    // кнопка стиля: очки — киберпанк; повторное нажатие возвращает базовый
+    const toggles = [
+      [document.getElementById('style'), 'cyber', 'Надеть очки: киберпанк', 'Снять очки: базовый стиль'],
+    ];
+    const sync = () => toggles.forEach(([b, k, off, on]) => {
+      const pressed = r.dataset.style === k;
+      b.setAttribute('aria-pressed', pressed); b.setAttribute('aria-label', pressed ? on : off); b.title = pressed ? on : off;
+    });
+    sync();
+    toggles.forEach(([b, k]) => b.onclick = () => {
+      const next = r.dataset.style === k ? '' : k;
+      if (next) r.dataset.style = next; else delete r.dataset.style;
+      try { localStorage.setItem('style', next); } catch {}
+      sync();
+    });
+    // кнопка темы: окно, в тёмной теме за ним солнце (станет день), в светлой — луна (станет ночь)
+    const tb = document.getElementById('theme');
+    // ориентируемся на фактическую схему, а не на атрибут
+    const isLight = () => getComputedStyle(r).colorScheme.includes('light');
+    const syncTheme = () => { const l = isLight() ? 'Тёмная тема' : 'Светлая тема'; tb.setAttribute('aria-label', l); tb.title = l; };
+    syncTheme();
+    tb.onclick = () => {
+      const next = isLight() ? 'dark' : 'light';
       r.dataset.theme = next;
       try { localStorage.setItem('theme', next); } catch {}
+      syncTheme();
     };
   </script>
 </body>
