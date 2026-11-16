@@ -14,6 +14,8 @@
 //   callouts: [{ at: [i, price], dx, dy, label }]   — точка, линия на dx/dy px и плашка (как выноски TradingView)
 //   from/to/at — индексы свечей (можно дробные), цены — в единицах графика
 //   out:     "public/glossary"               — необязательно
+//   title:   "4h"                            — необязательно; плашка в левом верхнем углу
+//   panels:  [<спец>, <спец>]                — несколько графиков рядом (каждый в формате выше)
 //   space:   0                               — необязательно; пустые слоты справа (место под подписи)
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -27,12 +29,12 @@ const THEMES = {
   '':       { bg: '#111111', up: '#34b36a', dn: '#ef5350', lvl: '#d1d4dc', mut: '#6e6e6e', tag: '#262626' },
   '-light': { bg: '#eeeeee', up: '#1f9d55', dn: '#f23645', lvl: '#444444', mut: '#b8b8b8', tag: '#dadada' },
 };
-const W = 2000, H = 1300, PAD = { l: 80, r: 160, t: 70, b: 70 };
+const H = 1300, PAD = { l: 80, r: 160, t: 70, b: 70 };
 const BODY = 0.62;   // ширина тела от шага свечи
 const WICK = 2.5;    // тень
 const LINE = 2;      // уровень: сплошная, 2px в файле ≈ 1px на странице (картинка показывается ~в 2 раза меньше)
 
-function svg({ candles, levels = [], range, zones = [], ellipses = [], marks = [], arrows = [], callouts = [], space = 0 }, t) {
+function svg({ candles, levels = [], range, zones = [], ellipses = [], marks = [], arrows = [], callouts = [], space = 0, title }, t, W = 2000) {
   const lows = candles.map((c) => c[2]), highs = candles.map((c) => c[1]);
   let [lo, hi] = range ?? [Math.min(...lows), Math.max(...highs)];
   if (!range) { const p = (hi - lo) * 0.04; lo -= p; hi += p; }
@@ -48,6 +50,7 @@ function svg({ candles, levels = [], range, zones = [], ellipses = [], marks = [
     return `<rect x="${f(cx - w / 2)}" y="${f(cy - h / 2)}" width="${w}" height="${h}" rx="8" fill="${t.tag}"/>` +
       `<text x="${f(cx)}" y="${f(cy + 9)}" fill="${t.lvl}" font-family="Helvetica, Arial, sans-serif" font-size="26" text-anchor="middle">${text}</text>`;
   };
+  if (title) out.push(tag(PAD.l + title.length * 6.5 + 16, 40, title));
   for (const { from, to, low, high, label } of zones) {
     const x1 = x(from) - bw / 2, x2 = x(to) + bw / 2, ym = (y(high) + y(low)) / 2;
     out.push(`<rect x="${f(x1)}" y="${f(y(high))}" width="${f(x2 - x1)}" height="${f(y(low) - y(high))}" fill="${t.lvl}" opacity="0.14"/>`);
@@ -87,13 +90,23 @@ function svg({ candles, levels = [], range, zones = [], ellipses = [], marks = [
   return out.concat('</svg>').join('\n');
 }
 
+function panels(list, t) {
+  const pw = 2000 / list.length;
+  const inner = list.map((p, k) => svg(p, t, pw).replace('<svg ', `<svg x="${k * pw}" y="0" `));
+  const sep = list.slice(1).map((_, k) => `<line x1="${pw * (k + 1)}" x2="${pw * (k + 1)}" y1="40" y2="${H - 40}" stroke="${t.mut}" stroke-width="2"/>`);
+  return [`<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="${H}" viewBox="0 0 2000 ${H}">`, ...inner, ...sep, '</svg>'].join('\n');
+}
+
 const names = process.argv.slice(2);
 if (!names.length) { console.error('node scripts/charts/render.mjs <имя> [имя…]'); process.exit(1); }
 for (const name of names) {
   const spec = JSON.parse(readFileSync(join(ROOT, 'scripts/charts', `${name}.json`), 'utf8'));
   for (const [suf, t] of Object.entries(THEMES)) {
     const file = join(ROOT, spec.out ?? 'public/glossary', `${name}${suf}.png`);
-    const src = svg(spec, t);
+    // panels: [spec, spec] — несколько графиков рядом (HTF/LTF), разделитель — тонкая линия
+    const src = spec.panels
+      ? panels(spec.panels, t)
+      : svg(spec, t);
     await sharp(Buffer.from(src)).png().toFile(file);
     // SVG-копия для ручной правки в Figma (перетащить файл на холст — всё редактируемыми слоями)
     mkdirSync(join(ROOT, 'scripts/charts/svg'), { recursive: true });

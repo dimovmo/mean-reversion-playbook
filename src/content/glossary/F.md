@@ -1,6 +1,6 @@
 ---
 term: "F"
-en: "Fractal"
+en: "Fractal High/Low"
 d: "элемент Price Action: локальный экстремум, где одна сторона перехватила инициативу."
 aliases: ["Fractal", "Fractal High/Low"]
 images:
