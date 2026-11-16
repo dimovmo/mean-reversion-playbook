@@ -10,10 +10,12 @@
 //   zones:    [{ from, to, low, high, label }] — прямоугольная зона (FVG и т.п.), подпись справа
 //   ellipses: [{ from, to, low, high, label }] — овал вокруг области (HTV и т.п.), подпись сверху
 //   marks:    [{ at, price, label }]           — точка на свече с выноской вверх (Test и т.п.)
+//   arrows:   [{ from: [i, price], to: [i, price] }] — стрелка (Impulse/Correction)
+//   callouts: [{ at: [i, price], dx, dy, label }]   — точка, линия на dx/dy px и плашка (как выноски TradingView)
 //   from/to/at — индексы свечей (можно дробные), цены — в единицах графика
 //   out:     "public/glossary"               — необязательно
 //   space:   0                               — необязательно; пустые слоты справа (место под подписи)
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
@@ -22,15 +24,15 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
 // Стиль: без сетки, осей и подписей; фон совпадает с фоном окна «Подробнее» (.gm-sl в global.css)
 const THEMES = {
-  '':       { bg: '#111111', up: '#26a69a', dn: '#ef5350', lvl: '#d1d4dc', mut: '#6e6e6e', tag: '#262626' },
-  '-light': { bg: '#ececec', up: '#089981', dn: '#f23645', lvl: '#444444', mut: '#b8b8b8', tag: '#dadada' },
+  '':       { bg: '#111111', up: '#34b36a', dn: '#ef5350', lvl: '#d1d4dc', mut: '#6e6e6e', tag: '#262626' },
+  '-light': { bg: '#eeeeee', up: '#1f9d55', dn: '#f23645', lvl: '#444444', mut: '#b8b8b8', tag: '#dadada' },
 };
 const W = 2000, H = 1300, PAD = { l: 80, r: 160, t: 70, b: 70 };
 const BODY = 0.62;   // ширина тела от шага свечи
 const WICK = 2.5;    // тень
 const LINE = 2;      // уровень: сплошная, 2px в файле ≈ 1px на странице (картинка показывается ~в 2 раза меньше)
 
-function svg({ candles, levels = [], range, zones = [], ellipses = [], marks = [], space = 0 }, t) {
+function svg({ candles, levels = [], range, zones = [], ellipses = [], marks = [], arrows = [], callouts = [], space = 0 }, t) {
   const lows = candles.map((c) => c[2]), highs = candles.map((c) => c[1]);
   let [lo, hi] = range ?? [Math.min(...lows), Math.max(...highs)];
   if (!range) { const p = (hi - lo) * 0.04; lo -= p; hi += p; }
@@ -42,7 +44,7 @@ function svg({ candles, levels = [], range, zones = [], ellipses = [], marks = [
     `<rect width="100%" height="100%" fill="${t.bg}"/>`];
   // подпись разметки: плашка в цвет уровня, без лишнего
   const tag = (cx, cy, text) => {
-    const w = text.length * 15 + 32, h = 44;
+    const w = text.length * 13 + 32, h = 44;
     return `<rect x="${f(cx - w / 2)}" y="${f(cy - h / 2)}" width="${w}" height="${h}" rx="8" fill="${t.tag}"/>` +
       `<text x="${f(cx)}" y="${f(cy + 9)}" fill="${t.lvl}" font-family="Helvetica, Arial, sans-serif" font-size="26" text-anchor="middle">${text}</text>`;
   };
@@ -68,6 +70,20 @@ function svg({ candles, levels = [], range, zones = [], ellipses = [], marks = [
     out.push(`<line x1="${f(cx)}" x2="${f(cx)}" y1="${f(py)}" y2="${f(py - 220)}" stroke="${t.lvl}" stroke-width="${LINE}"/>`,
       `<circle cx="${f(cx)}" cy="${f(py)}" r="5" fill="${t.lvl}"/>`, tag(cx, py - 242, label));
   }
+  // стрелки: [[i, price], [i, price]] — открытый наконечник в конце (как в TradingView)
+  for (const { from: [i1, p1], to: [i2, p2] } of arrows) {
+    const ax = x(i1), ay = y(p1), bx = x(i2), by = y(p2), a = Math.atan2(by - ay, bx - ax), L = 28;
+    const hd = (s) => `${f(bx - L * Math.cos(a + s))},${f(by - L * Math.sin(a + s))}`;
+    out.push(`<line x1="${f(ax)}" y1="${f(ay)}" x2="${f(bx)}" y2="${f(by)}" stroke="${t.lvl}" stroke-width="${LINE * 1.5}"/>`,
+      `<polyline points="${hd(0.45)} ${f(bx)},${f(by)} ${hd(-0.45)}" fill="none" stroke="${t.lvl}" stroke-width="${LINE * 1.5}"/>`);
+  }
+  // выноски: точка в [i, price], линия на dx/dy px, плашка за концом линии
+  for (const { at: [i, p], dx = 0, dy = 0, label } of callouts) {
+    const px = x(i), py = y(p), ex = px + dx, ey = py + dy, w = label.length * 13 + 32;
+    const cx = dx ? ex + Math.sign(dx) * w / 2 : ex, cy = dy ? ey + Math.sign(dy) * 22 : ey;
+    out.push(`<line x1="${f(px)}" y1="${f(py)}" x2="${f(ex)}" y2="${f(ey)}" stroke="${t.lvl}" stroke-width="${LINE}"/>`,
+      `<circle cx="${f(px)}" cy="${f(py)}" r="5" fill="${t.lvl}"/>`, tag(cx, cy, label));
+  }
   return out.concat('</svg>').join('\n');
 }
 
@@ -77,7 +93,11 @@ for (const name of names) {
   const spec = JSON.parse(readFileSync(join(ROOT, 'scripts/charts', `${name}.json`), 'utf8'));
   for (const [suf, t] of Object.entries(THEMES)) {
     const file = join(ROOT, spec.out ?? 'public/glossary', `${name}${suf}.png`);
-    await sharp(Buffer.from(svg(spec, t))).png().toFile(file);
+    const src = svg(spec, t);
+    await sharp(Buffer.from(src)).png().toFile(file);
+    // SVG-копия для ручной правки в Figma (перетащить файл на холст — всё редактируемыми слоями)
+    mkdirSync(join(ROOT, 'scripts/charts/svg'), { recursive: true });
+    writeFileSync(join(ROOT, 'scripts/charts/svg', `${name}${suf}.svg`), src);
     console.log('→', file.replace(ROOT + '/', ''));
   }
 }
