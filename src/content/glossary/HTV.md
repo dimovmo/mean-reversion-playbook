@@ -19,7 +19,7 @@ High Trading Volume — область, где цена долго торгов�
 - Область Support/Resistance
 - Индикация консолидации
 
-### Функции:
+### Функции
 - TA
 - SL
 - Все функции элементов SNR, RB, Fractal High/Low

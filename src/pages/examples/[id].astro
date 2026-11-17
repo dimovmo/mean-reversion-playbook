@@ -49,7 +49,14 @@ const d = entry.data;
   <div id="lb"><img alt="" /></div>
   <script is:inline>
     const lb = document.getElementById('lb');
-    document.querySelectorAll('.big img').forEach((img) => img.addEventListener('click', () => { lb.firstElementChild.src = img.src; lb.classList.add('on'); }));
+    const lbImg = lb.firstElementChild;
+    // Пока новый скрин не загрузился, img скрыт, иначе мелькает прошлый
+    lbImg.onload = lbImg.onerror = () => { lbImg.style.visibility = ''; };
+    document.querySelectorAll('.big img').forEach((img) => img.addEventListener('click', () => {
+      if (lbImg.src !== img.src) { lbImg.style.visibility = 'hidden'; lbImg.src = img.src; }
+      if (lbImg.complete && lbImg.naturalWidth) lbImg.style.visibility = '';
+      lb.classList.add('on');
+    }));
     lb.addEventListener('click', () => lb.classList.remove('on'));
     addEventListener('keydown', (e) => { if (e.key === 'Escape') lb.classList.remove('on'); });
   </script>

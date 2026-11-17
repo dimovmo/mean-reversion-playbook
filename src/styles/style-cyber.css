@@ -36,7 +36,7 @@
 [data-style="cyber"] .call.note>span::before{content:"[INFO]";color:var(--ac)}
 [data-style="cyber"] .call.good{border-color:var(--up);background:color-mix(in srgb,var(--up) 7%,transparent)}
 [data-style="cyber"] .call.good>span::before{content:"[OK]";color:var(--up)}
-[data-style="cyber"] .call.stop{border-color:var(--dn);background:color-mix(in srgb,var(--dn) 8%,transparent)}
+[data-style="cyber"] .call.stop{background:none;border:0;border-left:2px solid var(--dn);clip-path:none;padding:4px 0 4px 14px}
 [data-style="cyber"] .call.stop>span::before{content:"[ALERT]";color:var(--dn)}
 [data-style="cyber"] .call.time{border-color:var(--ac2)}[data-style="cyber"] .call.time>span::before{content:"[TIMER]";color:var(--ac2)}
 [data-style="cyber"] .card{border-radius:0;background:var(--bg);clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%)}

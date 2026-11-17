@@ -2,6 +2,7 @@
 term: "DR"
 en: "Dealing Range"
 d: "диапазон между последними значимыми swing high и swing low на выбранном таймфрейме."
+aliases: ["Premium/Discount"]
 images:
   - src: /glossary/dr-1.png
 ---

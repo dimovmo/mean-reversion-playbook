@@ -39,8 +39,8 @@ const bodies = await Promise.all(terms.map(async (x) => ({ id: x.id, Content: x.
     </div>
     <div class="gm-sl">
       <img alt="" />
-      <button class="gm-nav gm-prev" aria-label="Предыдущий скрин">‹</button>
-      <button class="gm-nav gm-next" aria-label="Следующий скрин">›</button>
+      <button class="gm-nav gm-prev" aria-label="Предыдущий скрин"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button class="gm-nav gm-next" aria-label="Следующий скрин"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
       <span class="gm-cap" hidden></span>
       <span class="gm-cnt"></span>
     </div>
@@ -60,10 +60,24 @@ const bodies = await Promise.all(terms.map(async (x) => ({ id: x.id, Content: x.
     // своё имя: скрипт Base.astro тоже объявляет глобальный isLight
     const gmLight = () => getComputedStyle(document.documentElement).colorScheme.includes('light');
 
-    img.onerror = () => { if (!img.src.endsWith(PH)) img.src = PH; };
+    // Пока новый скрин не загрузился, img скрыт, иначе мелькает прошлый
+    // фон слайдера = цвет угла скрина, чтобы картинка не сидела в рамке
+    const bgCv = document.createElement('canvas'); bgCv.width = bgCv.height = 1;
+    const matchBg = () => {
+      try {
+        const c = bgCv.getContext('2d', { willReadFrequently: true });
+        c.drawImage(img, 2, 2, 1, 1, 0, 0, 1, 1);
+        const [r, g, b] = c.getImageData(0, 0, 1, 1).data;
+        img.parentElement.style.background = `rgb(${r},${g},${b})`;
+      } catch { img.parentElement.style.background = ''; }
+    };
+    img.onload = () => { img.style.visibility = ''; matchBg(); };
+    img.onerror = () => { if (!img.src.endsWith(PH)) img.src = PH; else img.style.visibility = ''; };
     const show = (n) => {
       i = (n + list.length) % list.length;
-      img.src = list[i];
+      const url = new URL(list[i], location.href).href;
+      if (img.src !== url) { img.style.visibility = 'hidden'; img.src = url; }
+      if (img.complete && img.naturalWidth) img.style.visibility = '';
       const c = caps[i] || '';
       capEl.textContent = c; capEl.hidden = !c;
       img.alt = c ? `${alt} — ${c}` : list.length > 1 ? `${alt} — пример ${i + 1} из ${list.length}` : alt;
@@ -79,6 +93,8 @@ const bodies = await Promise.all(terms.map(async (x) => ({ id: x.id, Content: x.
       list = x.imgs.length ? (gmLight() ? x.lights : x.imgs) : [PH]; caps = x.imgs.length ? x.caps : []; alt = x.en || x.term;
       dlg.classList.toggle('one', list.length < 2);
       show(0);
+      // Остальные скрины грузим заранее, чтобы листание не дёргалось
+      list.slice(1).forEach((u) => { new Image().src = u; });
       dlg.showModal();
     };
 

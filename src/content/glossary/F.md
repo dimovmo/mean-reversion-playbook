@@ -1,11 +1,12 @@
 ---
 term: "F"
 en: "Fractal High/Low"
-d: "элемент Price Action: локальный экстремум, где одна сторона перехватила инициативу."
+d: "элемент Price Action: локальный экстремум, где одна из сторон перехватила инициативу."
 aliases: ["Fractal", "Fractal High/Low"]
 images:
   - src: /glossary/f-1.png
 ---
+
 Fractal (Fractal High/Low) — элемент Price Action: локальный экстремум, где одна из сторон перехватила инициативу.
 
 ### Как формируется

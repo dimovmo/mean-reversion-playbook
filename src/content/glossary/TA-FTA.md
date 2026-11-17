@@ -1,7 +1,8 @@
 ---
 term: "TA/FTA"
-en: "Trouble Area / First Trouble Area"
+en: "Trouble Area/First Trouble Area"
 d: "(первая) зона по ходу движения, где цена может встретить сопротивление/поддержку."
+aliases: ["TA", "FTA"]
 images:
   - src: /glossary/ta-fta-1.png
     label: Реакция на 4h на FTA

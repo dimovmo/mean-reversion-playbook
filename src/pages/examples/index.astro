@@ -1,5 +1,5 @@
 ---
-import { getCollection } from 'astro:content';
+import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 
 const all = (await getCollection('examples')).sort((a, b) => +b.data.date - +a.data.date);
@@ -20,6 +20,15 @@ for (const e of all) {
   }
   months.at(-1)!.items.push(e);
 }
+// данные для модалки: скрины по теме + подписи; текст карточки — в <template data-ex>
+const data = Object.fromEntries(all.map((e) => [e.id, {
+  pair: e.data.pair,
+  date: e.data.date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }),
+  imgs: e.data.images.map((im) => im.src),
+  lights: e.data.images.map((im) => im.light ?? im.src),
+  caps: e.data.images.map((im) => im.label ?? ''),
+}]));
+const bodies = await Promise.all(all.map(async (e) => ({ e, Content: (await render(e)).Content })));
 const plural = (n: number) => {
   const f = { one: 'сделка', few: 'сделки', many: 'сделок', other: 'сделки' } as Record<string, string>;
   return `${n} ${f[new Intl.PluralRules('ru-RU').select(n)]}`;
@@ -50,6 +59,113 @@ const plural = (n: number) => {
       </section>
     ))}
   </div>
+
+  <dialog id="gm" class="gm gm-trade" aria-labelledby="gm-t">
+    <div class="gm-head">
+      <div><h3 id="gm-t" class="mono"></h3><span class="gm-en"></span></div>
+      <div class="gm-act">
+        <a class="gm-pg" href="#" title="Открыть страницей">↗</a>
+        <button class="gm-x" aria-label="Закрыть">✕</button>
+      </div>
+    </div>
+    <div class="gm-sl">
+      <img alt="" />
+      <button class="gm-nav gm-prev" aria-label="Предыдущий скрин"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button class="gm-nav gm-next" aria-label="Следующий скрин"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+      <span class="gm-cap" hidden></span>
+      <span class="gm-cnt"></span>
+    </div>
+    <div class="gm-txt"></div>
+  </dialog>
+
+  {bodies.map(({ e, Content }) => {
+    const d = e.data;
+    return (
+      <template data-ex={e.id}>
+        <dl class="tkv">
+          <dt>Thesis</dt><dd>{d.thesis || '—'}</dd>
+          {[['SL', d.sl], ['TP', d.tp]].map(([h, xs]) => <>
+            <dt>{h}</dt>
+            <dd>{xs.length > 1 ? <ol class="lv">{(xs as string[]).map((x) => <li>{x}</li>)}</ol> : xs[0] || '—'}</dd>
+          </>)}
+          <dt>Entry</dt><dd>{d.entry || '—'}</dd>
+          {d.ev.length > 0 && <><dt>Pros</dt><dd class="ev">{d.ev.map((x) => <span class="evt">{x}</span>)}</dd></>}
+        </dl>
+        <div class="gm-body"><Content /></div>
+      </template>
+    );
+  })}
+  <script type="application/json" id="gm-data" set:html={JSON.stringify(data)} />
+  <script is:inline>
+    const DATA = JSON.parse(document.getElementById('gm-data').textContent);
+    const dlg = document.getElementById('gm'), $ = (s) => dlg.querySelector(s);
+    const img = $('.gm-sl img'), cnt = $('.gm-cnt'), capEl = $('.gm-cap');
+    let list = [], caps = [], i = 0, alt = '';
+    const gmLight = () => getComputedStyle(document.documentElement).colorScheme.includes('light');
+    // фон слайдера = цвет угла скрина, чтобы картинка не сидела в рамке
+    const bgCv = document.createElement('canvas'); bgCv.width = bgCv.height = 1;
+    const matchBg = () => {
+      try {
+        const c = bgCv.getContext('2d', { willReadFrequently: true });
+        c.drawImage(img, 2, 2, 1, 1, 0, 0, 1, 1);
+        const [r, g, b] = c.getImageData(0, 0, 1, 1).data;
+        img.parentElement.style.background = `rgb(${r},${g},${b})`;
+      } catch { img.parentElement.style.background = ''; }
+    };
+    img.onload = img.onerror = () => { img.style.visibility = ''; matchBg(); };
+    const show = (n) => {
+      i = (n + list.length) % list.length;
+      const url = new URL(list[i], location.href).href;
+      if (img.src !== url) { img.style.visibility = 'hidden'; img.src = url; }
+      if (img.complete && img.naturalWidth) img.style.visibility = '';
+      const c = caps[i] || '';
+      capEl.textContent = c; capEl.hidden = !c;
+      img.alt = c ? `${alt} — ${c}` : alt;
+      cnt.textContent = `${i + 1} / ${list.length}`;
+    };
+    const open = (id, push) => {
+      const x = DATA[id]; if (!x) return false;
+      $('#gm-t').textContent = x.pair;
+      $('.gm-en').textContent = x.date;
+      $('.gm-pg').href = `/examples/${id}`;
+      const tpl = document.querySelector(`template[data-ex="${CSS.escape(id)}"]`);
+      $('.gm-txt').replaceChildren(tpl.content.cloneNode(true));
+      $('.gm-txt').scrollTop = 0;
+      list = gmLight() ? x.lights : x.imgs; caps = x.caps; alt = x.pair;
+      dlg.classList.toggle('one', list.length < 2);
+      show(0);
+      list.slice(1).forEach((u) => { new Image().src = u; });
+      if (!dlg.open) dlg.showModal();
+      // ссылка на открытую сделку: /examples#<id>
+      if (push) history.pushState({ ex: id }, '', `#${id}`);
+      return true;
+    };
+    const close = () => { if (dlg.open) dlg.close(); };
+    dlg.addEventListener('close', () => { if (location.hash) history.pushState(null, '', location.pathname + location.search); });
+    document.querySelectorAll('a.ex').forEach((a) => a.addEventListener('click', (e) => {
+      // ctrl/cmd/средняя кнопка — как обычная ссылка на страницу
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+      if (open(a.getAttribute('href').split('/').pop(), true)) e.preventDefault();
+    }));
+    addEventListener('popstate', () => { const id = location.hash.slice(1); if (!(id && open(id, false))) close(); });
+    if (location.hash) open(decodeURIComponent(location.hash.slice(1)), false);
+    $('.gm-prev').onclick = () => show(i - 1);
+    $('.gm-next').onclick = () => show(i + 1);
+    $('.gm-x').onclick = close;
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) close(); });
+    dlg.addEventListener('keydown', (e) => {
+      if (list.length < 2) return;
+      if (e.key === 'ArrowLeft') show(i - 1);
+      if (e.key === 'ArrowRight') show(i + 1);
+    });
+    let x0 = null;
+    img.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+    img.addEventListener('touchend', (e) => {
+      if (x0 === null || list.length < 2) return;
+      const dx = e.changedTouches[0].clientX - x0; x0 = null;
+      if (Math.abs(dx) > 40) show(i + (dx < 0 ? 1 : -1));
+    });
+  </script>
   <script>
     const forms: Record<string, string> = { one: 'сделка', few: 'сделки', many: 'сделок', other: 'сделки' };
     const pr = new Intl.PluralRules('ru-RU');
