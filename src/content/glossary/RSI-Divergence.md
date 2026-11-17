@@ -1,6 +1,6 @@
 ---
 term: "RSI Divergence / Convergence"
-en: "RSI Divergence/Convergence"
+en: "??RSI Divergence/Convergence"
 d: "расхождение/схождение индикатора RSI относительно цены. Дивергенция — цена обновляет экстремум, а RSI нет: импульс слабеет, возможен разворот. Конвергенция — RSI подтверждает экстремум цены: импульс сохраняется, вероятнее продолжение движения."
 aliases: ["RSI Divergence/Convergence"]
 ---

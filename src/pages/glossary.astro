@@ -2,7 +2,7 @@
 import { getCollection, render } from 'astro:content';
 import Base from '../layouts/Base.astro';
 
-// Тело .md-файла термина — текст окна «Подробнее»; если пусто, показывается краткое определение d
+// Тело .md-файла термина — текст окна «Подробнее»; без тела и скринов кнопки нет — хватает краткого d
 // Без английской расшифровки описание начинается с заглавной
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
@@ -26,7 +26,7 @@ const bodies = await Promise.all(terms.map(async (x) => ({ id: x.id, Content: x.
       {terms.map((x) => (
         <>
           <dt id={x.id} class="mono">{x.term}</dt>
-          <dd>{x.en ? <><b>{x.en}</b> — {x.d}</> : cap(x.d)}<br /><button class="ex-btn" data-id={x.id} aria-haspopup="dialog">Подробнее</button></dd>
+          <dd>{x.en ? <><b>{x.en}</b> — {x.d}</> : cap(x.d)}{(x.body || x.images.length > 0) && <><br /><button class="ex-btn" data-id={x.id} aria-haspopup="dialog">Подробнее</button></>}</dd>
         </>
       ))}
     </dl>

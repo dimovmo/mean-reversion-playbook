@@ -1,7 +1,9 @@
----
+C---
 term: "LTV"
 en: "Low Trading Volume"
 d: "зона низкого проторгованного объёма."
+images:
+  - src: /glossary/ltv-1.png
 ---
 
 Low Trading Volume — участок, который цена прошла быстро, оставив неэффективность.
