@@ -48,10 +48,10 @@ const plural = (n: number) => {
         <div class="gal">
           {m.items.map((e) => (
             <a class="ex" href={`/examples/${e.id}`} data-market={e.data.market} data-direction={e.data.direction} data-result={e.data.result}>
-              <img class={e.data.images[0].light && 'th-dark'} src={e.data.images[0].src} alt={`${e.data.pair} ${e.data.direction}`} loading="lazy" />
-              {e.data.images[0].light && <img class="th-light" src={e.data.images[0].light} alt={`${e.data.pair} ${e.data.direction}`} loading="lazy" />}
+              <img class={e.data.images.at(-1)!.light && 'th-dark'} src={e.data.images.at(-1)!.src} alt={`${e.data.pair} ${e.data.direction}`} loading="lazy" />
+              {e.data.images.at(-1)!.light && <img class="th-light" src={e.data.images.at(-1)!.light} alt={`${e.data.pair} ${e.data.direction}`} loading="lazy" />}
               <div class="b">
-                <div class="tags"><span class="tag">{e.data.pair}</span><span class={`tag ${e.data.direction}`}>{e.data.direction}</span><span class="tag">{fmt(e.data.date)}</span></div>
+                <div class="tags"><span class="tag">{e.data.pair}</span><span class="tag">{fmt(e.data.date)}</span><span class={`tag r ${e.data.result === 'Стоп' ? 'Short' : 'Long'}`}>{e.data.result === 'Стоп' ? '−1R' : `+${e.data.rr}R`}</span></div>
               </div>
             </a>
           ))}
@@ -80,6 +80,7 @@ const plural = (n: number) => {
     const d = e.data;
     return (
       <template data-ex={e.id}>
+        <div class="tags"><span class={`tag ${d.direction}`}>{d.direction}</span><span class={`tag ${d.result === 'Стоп' ? 'Short' : 'Long'}`}>{d.result === 'Стоп' ? '−1R' : `+${d.rr}R`}</span></div>
         <dl class="tkv">
           <dt>Thesis</dt><dd>{d.thesis || '—'}</dd>
           {[['SL', d.sl], ['TP', d.tp]].map(([h, xs]) => <>

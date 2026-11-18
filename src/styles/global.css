@@ -148,3 +148,4 @@ h4{margin:28px 0 0;font:600 12px "Golos Text",sans-serif;text-transform:uppercas
 [data-theme="light"] .th-light{display:block!important}[data-theme="light"] .th-dark{display:none!important}
 [data-theme="light"] .gm-sl{background:#eeeeee}
 [data-theme="light"] .gm-txt h3{color:var(--ac)}
+.ex .tags .r{margin-left:auto}

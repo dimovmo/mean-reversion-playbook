@@ -14,7 +14,7 @@ const d = entry.data;
   <div class="wrap trade-wrap">
     <a href="/examples">← Все примеры</a>
     <h2 style="margin-top:12px">{d.pair}</h2>
-    <div class="tags"><span class={`tag ${d.direction}`}>{d.direction}</span><span class="tag">{d.date.toISOString().slice(0, 10)}</span><span class="tag">{d.market}</span><span class="tag">{d.result}</span><span class="tag">RR {d.rr}</span></div>
+    <div class="tags"><span class={`tag ${d.direction}`}>{d.direction}</span><span class="tag">{d.date.toISOString().slice(0, 10)}</span><span class="tag">{d.market}</span><span class="tag">{d.result}</span><span class={`tag ${d.result === 'Стоп' ? 'Short' : 'Long'}`}>{d.result === 'Стоп' ? '−1R' : `+${d.rr}R`}</span></div>
     <div class="trade">
       <div class="shots">
         {d.images.map((im, i) => (
