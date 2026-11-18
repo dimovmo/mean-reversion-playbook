@@ -39,7 +39,7 @@ const plural = (n: number) => {
     <h2>Примеры</h2>
     {groups.map(([label, key, values]) => (
       <div class="chips"><small>{label}</small>
-        {values.map((v) => <button class="chip" data-k={key} data-v={v}>{v}</button>)}
+        {values.filter((v) => all.some((e) => (e.data as any)[key] === v)).map((v) => <button class="chip" data-k={key} data-v={v}>{v}</button>)}
       </div>
     ))}
     {months.map((m) => (
@@ -51,7 +51,7 @@ const plural = (n: number) => {
               <img class={e.data.images[0].light && 'th-dark'} src={e.data.images[0].src} alt={`${e.data.pair} ${e.data.direction}`} loading="lazy" />
               {e.data.images[0].light && <img class="th-light" src={e.data.images[0].light} alt={`${e.data.pair} ${e.data.direction}`} loading="lazy" />}
               <div class="b">
-                <div class="tags"><span class="tag">{e.data.pair}</span><span class={`tag ${e.data.direction}`}>{e.data.direction}</span><span class="tag">{fmt(e.data.date)}</span>{e.data.ev.length > 0 && <span class="tag evc" title={e.data.ev.join('\n')}>Pros {e.data.ev.length}</span>}</div>
+                <div class="tags"><span class="tag">{e.data.pair}</span><span class={`tag ${e.data.direction}`}>{e.data.direction}</span><span class="tag">{fmt(e.data.date)}</span></div>
               </div>
             </a>
           ))}
@@ -64,7 +64,6 @@ const plural = (n: number) => {
     <div class="gm-head">
       <div><h3 id="gm-t" class="mono"></h3><span class="gm-en"></span></div>
       <div class="gm-act">
-        <a class="gm-pg" href="#" title="Открыть страницей">↗</a>
         <button class="gm-x" aria-label="Закрыть">✕</button>
       </div>
     </div>
@@ -72,8 +71,7 @@ const plural = (n: number) => {
       <img alt="" />
       <button class="gm-nav gm-prev" aria-label="Предыдущий скрин"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
       <button class="gm-nav gm-next" aria-label="Следующий скрин"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
-      <span class="gm-cap" hidden></span>
-      <span class="gm-cnt"></span>
+      <div class="gm-bar"><span class="gm-cap" hidden></span><span class="gm-cnt"></span></div>
     </div>
     <div class="gm-txt"></div>
   </dialog>
@@ -89,7 +87,6 @@ const plural = (n: number) => {
             <dd>{xs.length > 1 ? <ol class="lv">{(xs as string[]).map((x) => <li>{x}</li>)}</ol> : xs[0] || '—'}</dd>
           </>)}
           <dt>Entry</dt><dd>{d.entry || '—'}</dd>
-          {d.ev.length > 0 && <><dt>Pros</dt><dd class="ev">{d.ev.map((x) => <span class="evt">{x}</span>)}</dd></>}
         </dl>
         <div class="gm-body"><Content /></div>
       </template>
@@ -127,7 +124,6 @@ const plural = (n: number) => {
       const x = DATA[id]; if (!x) return false;
       $('#gm-t').textContent = x.pair;
       $('.gm-en').textContent = x.date;
-      $('.gm-pg').href = `/examples/${id}`;
       const tpl = document.querySelector(`template[data-ex="${CSS.escape(id)}"]`);
       $('.gm-txt').replaceChildren(tpl.content.cloneNode(true));
       $('.gm-txt').scrollTop = 0;

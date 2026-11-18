@@ -60,8 +60,6 @@
 [data-style="cyber"] .ex img{border-bottom:1px solid var(--line)}
 [data-style="cyber"] .tag{border-radius:0;text-transform:uppercase;letter-spacing:.06em}
 [data-style="cyber"] .tag.Long{border-color:var(--up)}[data-style="cyber"] .tag.Short{border-color:var(--dn)}
-[data-style="cyber"] .evt{border-radius:0;background:var(--ac2);box-shadow:var(--glow2)}
-[data-style="cyber"] .tag.evc{color:var(--ac2);border-color:var(--ac2)}
 [data-style="cyber"] .big{border-radius:0;border-color:var(--line)}
 [data-style="cyber"] .tcard{border-radius:0;background:var(--panel);border-color:var(--ac)}
 [data-style="cyber"] .gl dt{font:17px var(--head);text-transform:uppercase;letter-spacing:.04em;border-radius:0}[data-style="cyber"] .gl dd{border-radius:0}

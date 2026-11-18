@@ -37,8 +37,6 @@ const examples = defineCollection({
     sl: levels.default([]),
     tp: levels,
     entry: z.string().optional(),
-    // Pros этой сделки — факторы, повышающие её качество, свободным текстом: [LRL, RSI > 75, Deep premium]
-    ev: z.array(z.string()).default([]),
     // скрины по порядку показа; путь относительно /public.
     // можно просто строкой или с подписью: { src: /examples/ger40-4h.png, label: 4h }
     images: z.array(image).min(1),

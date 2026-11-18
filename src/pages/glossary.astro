@@ -41,8 +41,7 @@ const bodies = await Promise.all(terms.map(async (x) => ({ id: x.id, Content: x.
       <img alt="" />
       <button class="gm-nav gm-prev" aria-label="Предыдущий скрин"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
       <button class="gm-nav gm-next" aria-label="Следующий скрин"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
-      <span class="gm-cap" hidden></span>
-      <span class="gm-cnt"></span>
+      <div class="gm-bar"><span class="gm-cap" hidden></span><span class="gm-cnt"></span></div>
     </div>
     <div class="gm-txt"></div>
   </dialog>
