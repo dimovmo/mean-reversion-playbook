@@ -24,8 +24,9 @@ const image = z
   .transform((x) => (typeof x === 'string' ? { src: x, label: undefined } : x))
   .transform((x) => ({ ...x, light: lightOf(x.src) }));
 
+// файлы на _ (_audusd-2026-10-01.md) — черновики, в коллекцию не попадают
 const examples = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/examples' }),
+  loader: glob({ pattern: ['**/*.md', '!**/_*.md'], base: './src/content/examples' }),
   schema: z.object({
     pair: z.string(),
     market: z.enum(['Форекс', 'Индексы', 'Металлы', 'Нефть', 'Криптовалюта']),
