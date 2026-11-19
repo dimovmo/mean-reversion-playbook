@@ -6,7 +6,7 @@ const all = (await getCollection('examples')).sort((a, b) => +b.data.date - +a.d
 const groups = [
   ['Рынок', 'market', ['Форекс', 'Индексы', 'Металлы', 'Нефть', 'Криптовалюта']],
   // ['Сторона', 'direction', ['Long', 'Short']],
-  // ['Итог', 'result', ['Профит', 'Стоп']],
+  // ['Итог', 'result', ['Profit', 'Stop']],
 ] as const;
 const fmt = (d: Date) => d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
 // группировка по месяцам (all уже отсортирован от новых к старым)
@@ -51,7 +51,7 @@ const plural = (n: number) => {
               <img class={e.data.images.at(-1)!.light && 'th-dark'} src={e.data.images.at(-1)!.src} alt={`${e.data.pair} ${e.data.direction}`} loading="lazy" />
               {e.data.images.at(-1)!.light && <img class="th-light" src={e.data.images.at(-1)!.light} alt={`${e.data.pair} ${e.data.direction}`} loading="lazy" />}
               <div class="b">
-                <div class="tags"><span class="tag">{e.data.pair}</span><span class="tag">{fmt(e.data.date)}</span><span class={`tag r ${e.data.result === 'Стоп' ? 'Short' : 'Long'}`}>{e.data.result === 'Стоп' ? '−1R' : `+${e.data.rr}R`}</span></div>
+                <div class="tags"><span class="tag">{e.data.pair}</span><span class="tag">{fmt(e.data.date)}</span><span class={`tag r ${e.data.result === 'Stop' ? 'Short' : 'Long'}`}>{e.data.result === 'Stop' ? '−1R' : `+${e.data.rr}R`}</span></div>
               </div>
             </a>
           ))}
@@ -80,7 +80,7 @@ const plural = (n: number) => {
     const d = e.data;
     return (
       <template data-ex={e.id}>
-        <div class="tags"><span class={`tag ${d.direction}`}>{d.direction}</span><span class={`tag ${d.result === 'Стоп' ? 'Short' : 'Long'}`}>{d.result === 'Стоп' ? '−1R' : `+${d.rr}R`}</span></div>
+        <div class="tags"><span class={`tag ${d.direction}`}>{d.direction}</span><span class={`tag ${d.result === 'Stop' ? 'Short' : 'Long'}`}>{d.result === 'Stop' ? '−1R' : `+${d.rr}R`}</span></div>
         <dl class="tkv">
           <dt>Thesis</dt><dd>{d.thesis || '—'}</dd>
           {[['SL', d.sl], ['TP', d.tp]].map(([h, xs]) => <>

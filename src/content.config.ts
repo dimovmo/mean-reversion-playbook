@@ -32,7 +32,7 @@ const examples = defineCollection({
     direction: z.enum(['Long', 'Short']),
     date: z.coerce.date(),
     rr: z.number(),
-    result: z.enum(['Профит', 'Стоп']),
+    result: z.enum(['Profit', 'Stop']),
     thesis: z.string().optional(),
     sl: levels.default([]),
     tp: levels,
