@@ -2,9 +2,14 @@
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 
+// базовые цели для фильтра: "FTA: 4h FVG" → FTA
+const targets = (xs: string[]) => [...new Set(xs.map((x) => x.split(':')[0].trim()))];
 const all = (await getCollection('examples')).sort((a, b) => +b.data.date - +a.data.date);
 const groups = [
-  ['Рынок', 'market', ['Форекс', 'Индексы', 'Металлы', 'Нефть', 'Криптовалюта']],
+  ['Рынок', 'market', ['Форекс', 'Индексы', 'Металлы', 'Нефть', 'Криптовалюта', 'Акции']],
+  ['Thesis', 'thesis', [...new Set(all.flatMap((e) => targets(e.data.thesis)))].sort()],
+  ['Entry', 'entry', [...new Set(all.flatMap((e) => targets(e.data.entry)))].sort()],
+  ['Target', 'target', [...new Set(all.flatMap((e) => targets(e.data.target)))].sort()],
   // ['Сторона', 'direction', ['Long', 'Short']],
   // ['Итог', 'result', ['Profit', 'Stop']],
 ] as const;
@@ -39,15 +44,19 @@ const plural = (n: number) => {
     <h2>Примеры</h2>
     {groups.map(([label, key, values]) => (
       <div class="chips"><small>{label}</small>
-        {values.filter((v) => all.some((e) => (e.data as any)[key] === v)).map((v) => <button class="chip" data-k={key} data-v={v}>{v}</button>)}
+        {values.filter((v) => all.some((e) => key === 'target' || key === 'thesis' || key === 'entry' ? targets(e.data[key]).includes(v) : (e.data as any)[key] === v)).map((v) => <button class="chip" data-k={key} data-v={v}>{v}</button>)}
       </div>
     ))}
+    <div class="empty" hidden>
+      <p>Нет сделок с таким набором фильтров.</p>
+      <button class="reset">Сбросить фильтры</button>
+    </div>
     {months.map((m) => (
       <section class="month">
         <h3 class="month-h"><span>{m.label}</span><small class="month-n">{plural(m.items.length)}</small></h3>
         <div class="gal">
           {m.items.map((e) => (
-            <a class="ex" href={`/examples/${e.id}`} data-market={e.data.market} data-direction={e.data.direction} data-result={e.data.result}>
+            <a class="ex" href={`/examples/${e.id}`} data-market={e.data.market} data-direction={e.data.direction} data-result={e.data.result} data-target={targets(e.data.target).join('|')} data-thesis={targets(e.data.thesis).join('|')} data-entry={targets(e.data.entry).join('|')}>
               <img class={e.data.images.at(-1)!.light && 'th-dark'} src={e.data.images.at(-1)!.src} alt={`${e.data.pair} ${e.data.direction}`} loading="lazy" />
               {e.data.images.at(-1)!.light && <img class="th-light" src={e.data.images.at(-1)!.light} alt={`${e.data.pair} ${e.data.direction}`} loading="lazy" />}
               <div class="b">
@@ -82,12 +91,11 @@ const plural = (n: number) => {
       <template data-ex={e.id}>
         <div class="tags"><span class={`tag ${d.direction}`}>{d.direction}</span><span class={`tag ${d.result === 'Stop' ? 'Short' : 'Long'}`}>{d.result === 'Stop' ? '−1R' : `+${d.rr}R`}</span></div>
         <dl class="tkv">
-          <dt>Thesis</dt><dd>{d.thesis || '—'}</dd>
-          {[['SL', d.sl], ['TP', d.tp]].map(([h, xs]) => <>
-            <dt>{h}</dt>
-            <dd>{xs.length > 1 ? <ol class="lv">{(xs as string[]).map((x) => <li>{x}</li>)}</ol> : xs[0] || '—'}</dd>
-          </>)}
-          <dt>Entry</dt><dd>{d.entry || '—'}</dd>
+          <dt>Thesis</dt><dd>{d.thesis.join(', ') || '—'}</dd>
+          <dt>SL</dt>
+          <dd>{d.sl.length > 1 ? <ol class="lv">{d.sl.map((x) => <li>{x}</li>)}</ol> : d.sl[0] || '—'}</dd>
+          <dt>Target</dt><dd>{d.target.join(', ') || '—'}</dd>
+          <dt>Entry</dt><dd>{d.entry.join(', ') || '—'}</dd>
         </dl>
         <div class="gm-body"><Content /></div>
       </template>
@@ -169,17 +177,27 @@ const plural = (n: number) => {
     const plural = (n: number) => `${n} ${forms[pr.select(n)]}`;
     const active: Record<string, string> = {};
     const cards = [...document.querySelectorAll<HTMLElement>('.ex')];
-    document.querySelectorAll<HTMLButtonElement>('.chip').forEach((b) => b.addEventListener('click', () => {
-      const { k, v } = b.dataset as { k: string; v: string };
-      if (active[k] === v) delete active[k]; else active[k] = v;
-      document.querySelectorAll<HTMLButtonElement>(`.chip[data-k="${k}"]`).forEach((x) => x.classList.toggle('on', active[k] === x.dataset.v));
-      cards.forEach((c) => { c.hidden = !Object.entries(active).every(([kk, vv]) => c.dataset[kk] === vv); });
+    const apply = () => {
+      document.querySelectorAll<HTMLButtonElement>('.chip').forEach((x) => x.classList.toggle('on', active[x.dataset.k!] === x.dataset.v));
+      cards.forEach((c) => { c.hidden = !Object.entries(active).every(([kk, vv]) => (c.dataset[kk] ?? '').split('|').includes(vv)); });
       // прячем пустые месяцы и обновляем счётчик
+      let total = 0;
       document.querySelectorAll<HTMLElement>('.month').forEach((m) => {
         const n = m.querySelectorAll('.ex:not([hidden])').length;
+        total += n;
         m.hidden = n === 0;
         m.querySelector('.month-n')!.textContent = plural(n);
       });
+      document.querySelector<HTMLElement>('.empty')!.hidden = total > 0;
+    };
+    document.querySelectorAll<HTMLButtonElement>('.chip').forEach((b) => b.addEventListener('click', () => {
+      const { k, v } = b.dataset as { k: string; v: string };
+      if (active[k] === v) delete active[k]; else active[k] = v;
+      apply();
+    }));
+    document.querySelectorAll<HTMLButtonElement>('.reset').forEach((b) => b.addEventListener('click', () => {
+      for (const k in active) delete active[k];
+      apply();
     }));
   </script>
 </Base>

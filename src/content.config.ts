@@ -7,7 +7,7 @@ const playbook = defineCollection({
   schema: z.object({ title: z.string() }),
 });
 
-// один SL/TP строкой или до трёх списком: tp: ["FTA: 4h FVG", "1h Swing Low"]
+// один SL/target строкой или до трёх списком: target: ["FTA", "Gap"]
 // значения с двоеточием — в кавычках, иначе YAML прочитает их как объект
 const levels = z
   .union([z.string(), z.array(z.string()).min(1).max(3)])
@@ -29,15 +29,15 @@ const examples = defineCollection({
   loader: glob({ pattern: ['**/*.md', '!**/_*.md'], base: './src/content/examples' }),
   schema: z.object({
     pair: z.string(),
-    market: z.enum(['Форекс', 'Индексы', 'Металлы', 'Нефть', 'Криптовалюта']),
+    market: z.enum(['Форекс', 'Индексы', 'Металлы', 'Нефть', 'Криптовалюта', 'Акции']),
     direction: z.enum(['Long', 'Short']),
     date: z.coerce.date(),
     rr: z.number(),
     result: z.enum(['Profit', 'Stop']),
-    thesis: z.string().optional(),
+    thesis: levels.default([]),
     sl: levels.default([]),
-    tp: levels,
-    entry: z.string().optional(),
+    target: levels,
+    entry: levels.default([]),
     // скрины по порядку показа; путь относительно /public.
     // можно просто строкой или с подписью: { src: /examples/ger40-4h.png, label: 4h }
     images: z.array(image).min(1),

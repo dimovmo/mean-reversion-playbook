@@ -26,14 +26,13 @@ const d = entry.data;
         ))}
       </div>
       <aside class="card tcard">
-        <h4>Thesis</h4><p>{d.thesis || '—'}</p>
-        {[['SL', d.sl], ['TP', d.tp]].map(([h, xs]) => <>
-          <h4>{h}</h4>
-          {xs.length > 1
-            ? <ol class="lv">{xs.map((x) => <li>{x}</li>)}</ol>
-            : <p>{xs[0] || '—'}</p>}
-        </>)}
-        <h4>Entry</h4><p>{d.entry || '—'}</p>
+        <h4>Thesis</h4><p>{d.thesis.join(', ') || '—'}</p>
+        <h4>SL</h4>
+        {d.sl.length > 1
+          ? <ol class="lv">{d.sl.map((x) => <li>{x}</li>)}</ol>
+          : <p>{d.sl[0] || '—'}</p>}
+        <h4>Target</h4><p>{d.target.join(', ') || '—'}</p>
+        <h4>Entry</h4><p>{d.entry.join(', ') || '—'}</p>
         <h4>Comment</h4><div class="tc-body"><Content /></div>
       </aside>
     </div>
